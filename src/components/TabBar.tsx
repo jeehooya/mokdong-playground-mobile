@@ -69,8 +69,8 @@ export default function TabBar() {
         borderRadius: 861,
         paddingTop: 12,
         paddingBottom: 16,
-        paddingLeft: 32,
-        paddingRight: 32,
+        paddingLeft: 16,
+        paddingRight: 16,
         boxShadow: '0px 4px 7.5px rgba(0,0,0,0.1)',
         pointerEvents: 'all',
       }}>
