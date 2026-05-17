@@ -6,9 +6,9 @@ import { usePathname, useRouter } from 'next/navigation'
 const V = '?v=3'  // bump to bust icon cache after update
 
 const TABS = [
-  { href: '/info',          no: `/icons/navigator/동네 정보_no.svg${V}`,   yes: `/icons/navigator/동네정보_yes.svg${V}`,   alt: '동네 정보',   label: '동네 정보' },
-  { href: '/',              no: `/icons/navigator/놀이터 지도_no.svg${V}`,  yes: `/icons/navigator/놀이터지도_yes.svg${V}`, alt: '놀이터 지도', label: '놀이터 지도' },
-  { href: '/my-playground', no: `/icons/navigator/나의 놀이터_no.svg${V}`,  yes: `/icons/navigator/나의 놀이터_yes.svg${V}`, alt: '나의 놀이터', label: '나의 놀이터' },
+  { href: '/info',          no: '/icons/navigator/동네 정보_no.svg'  + V, yes: '/icons/navigator/동네정보_yes.svg'   + V, alt: '동네 정보',   label: '동네 정보' },
+  { href: '/',              no: '/icons/navigator/놀이터 지도_no.svg' + V, yes: '/icons/navigator/놀이터지도_yes.svg'  + V, alt: '놀이터 지도', label: '놀이터 지도' },
+  { href: '/my-playground', no: '/icons/navigator/나의 놀이터_no.svg' + V, yes: '/icons/navigator/나의 놀이터_yes.svg' + V, alt: '나의 놀이터', label: '나의 놀이터' },
 ]
 
 const HIDDEN_PATHS = ['/camera', '/extract', '/add-playground']
@@ -94,7 +94,7 @@ export default function TabBar() {
           background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
         }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/icons/navigator/연결하기_no.svg${V}`} alt="연결하기"
+          <img src={'/icons/navigator/연결하기_no.svg' + V} alt="연결하기"
             width={50} height={50} style={{ objectFit: 'contain', flexShrink: 0 }} />
           <span style={labelStyle(false)}>연결하기</span>
         </button>

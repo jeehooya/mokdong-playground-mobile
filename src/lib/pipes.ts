@@ -3,6 +3,7 @@ export const PIPE_MODELS = [
   'Cylinder.008.glb', 'Cylinder.009.glb', 'Cylinder.011.glb', 'Cylinder.012.glb',
   'Cylinder.016.glb', 'Cylinder.021.glb', 'Cylinder.022.glb', 'Cylinder.023.glb',
   'Cylinder.025.glb', 'Cylinder.046.glb',
+  'Cylinder 005 .glb', 'Cylinder 013 .glb', 'Cylinder 014 .glb', 'Cylinder 015 .glb',
 ]
 
 export const PIPE_NAMES: Record<string, string> = {
@@ -20,6 +21,10 @@ export const PIPE_NAMES: Record<string, string> = {
   'Cylinder.023.glb': '수업 중 딴짓',
   'Cylinder.025.glb': '그럼에도 꽃피우는',
   'Cylinder.046.glb': '지나가는 알록달록 터널',
+  'Cylinder 014 .glb': '손꼽히는 기둥',
+  'Cylinder 015 .glb': '과거의 목장',
+  'Cylinder 005 .glb': '튼튼한 받침대',
+  'Cylinder 013 .glb': '꼬부랑 지팡이',  
 }
 
 export const PIPE_DESCRIPTIONS: Record<string, string> = {
@@ -39,10 +44,26 @@ export const PIPE_DESCRIPTIONS: Record<string, string> = {
   'Cylinder.046.glb': '알록달록 빛나는 목동의 골목골목',
 }
 
-// SVG index: 1-14 maps to PIPE_MODELS index 0-13
-export function getPipeSvgIdx(modelFile: string): number {
-  const i = PIPE_MODELS.indexOf(modelFile)
-  return i >= 0 ? i + 1 : 1
+// GLB → { no: 미발견 SVG, yes: 발견 SVG } 매핑
+export const PIPE_SVG_NAMES: Record<string, { no: string; yes: string }> = {
+  'Cylinder.001.glb':  { no: '용왕 꼬리.svg',           yes: '용왕 꼬리02.svg' },
+  'Cylinder.002.glb':  { no: '터널 기억자 입구01.svg',   yes: '터널 기억자 입구02.svg' },
+  'Cylinder.006.glb':  { no: '구불구불 안양천.svg',       yes: '구불구불 안양천02.svg' },
+  'Cylinder.007.glb':  { no: '터널 일자 입구.svg',        yes: '터널 일자 입구02.svg' },
+  'Cylinder.008.glb':  { no: '작은 월촌리.svg',           yes: '작은 월촌리02.svg' },
+  'Cylinder.009.glb':  { no: '꽃봉오리.svg',              yes: '꽃봉오리02.svg' },
+  'Cylinder.011.glb':  { no: '소나무동산01.svg',           yes: '소나무동산02.svg' },
+  'Cylinder.012.glb':  { no: '지나가는 터널.svg',          yes: '지나가는 터널02.svg' },
+  'Cylinder.016.glb':  { no: '여름의 파리공원.svg',        yes: '여름의 파리공원02.svg' },
+  'Cylinder.021.glb':  { no: '할미꽃 터널입구.svg',        yes: '할미꽃 터널입구02.svg' },
+  'Cylinder.022.glb':  { no: '큰 월촌리.svg',              yes: '큰 월촌리02.svg' },
+  'Cylinder.023.glb':  { no: '수업 중 딴짓.svg',           yes: '수업 중 딴짓02.svg' },
+  'Cylinder.025.glb':  { no: '그럼에도 꽃피우는.svg',      yes: '그럼에도 꽃피우는02.svg' },
+  'Cylinder.046.glb':  { no: '지나가는 터널.svg',          yes: '지나가는 터널02.svg' },
+  'Cylinder 005 .glb': { no: '튼튼한 받침대001.svg',       yes: '튼튼한 받침대002.svg' },
+  'Cylinder 013 .glb': { no: '꼬부랑 지팡이.svg',          yes: '꼬부랑 지팡이02.svg' },
+  'Cylinder 014 .glb': { no: '손꼽히는 기둥.svg',          yes: '손꼽히는 기둥02.svg' },
+  'Cylinder 015 .glb': { no: '과거의 목장.svg',            yes: '과거의 목장02.svg' },
 }
 
 export const MAP_THEMES = {

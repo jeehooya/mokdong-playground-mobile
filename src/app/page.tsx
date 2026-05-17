@@ -56,6 +56,21 @@ interface BubbleAnim {
   startMs: number; delay: number; duration: number
 }
 
+interface FloatingBubble {
+  mesh: THREE.Mesh
+  cellKey: string
+  centerX: number; centerY: number; centerZ: number
+  radius: number
+  theta: number
+  phi: number
+  thetaSpeed: number
+  phiSpeed: number
+  radiusSpeed: number
+  radiusAmplitude: number
+  baseRadius: number
+  phase: number
+}
+
 interface CamAnim {
   fromTarget: THREE.Vector3; toTarget: THREE.Vector3
   fromPos: THREE.Vector3;    toPos: THREE.Vector3
@@ -78,9 +93,10 @@ export default function MapDefault() {
   const gradMeshRef = useRef<THREE.LineSegments | null>(null)
   const highlightRef = useRef<THREE.Mesh | null>(null)
   const selectedHighlightRef = useRef<THREE.Mesh | null>(null)
-  const markerRef = useRef<THREE.Mesh | null>(null)
+  const markerRef = useRef<THREE.Object3D | null>(null)
   const rafRef = useRef(0)
   const bubblesRef = useRef<BubbleAnim[]>([])
+  const floatingBubblesRef = useRef<FloatingBubble[]>([])
   const placedRef = useRef<Map<string, PlacedEntry>>(new Map())
   const markerPosRef = useRef<{ x: number; z: number; y: number } | null>(null)
   const raycasterRef = useRef(new THREE.Raycaster())
@@ -89,6 +105,7 @@ export default function MapDefault() {
   const prevCameraRef = useRef<{ pos: THREE.Vector3; target: THREE.Vector3 } | null>(null)
   const camAnimRef = useRef<CamAnim | null>(null)
   const isFirstLoadRef = useRef(true)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
 
   // State
   const [theme, setTheme] = useState<ThemeKey>('default')
@@ -179,6 +196,19 @@ export default function MapDefault() {
         return true
       })
 
+      // Floating bubble animation (spherical orbit)
+      const nowSec = performance.now() / 1000
+      floatingBubblesRef.current.forEach(b => {
+        b.theta += b.thetaSpeed * 0.016
+        b.phi += b.phiSpeed * 0.016
+        if (b.phi > Math.PI * 0.4) { b.phi = Math.PI * 0.4; b.phiSpeed *= -1 }
+        if (b.phi < -Math.PI * 0.4) { b.phi = -Math.PI * 0.4; b.phiSpeed *= -1 }
+        const r = b.baseRadius + Math.sin(nowSec * b.radiusSpeed + b.phase) * b.radiusAmplitude
+        b.mesh.position.x = b.centerX + r * Math.cos(b.phi) * Math.cos(b.theta)
+        b.mesh.position.z = b.centerZ + r * Math.cos(b.phi) * Math.sin(b.theta)
+        b.mesh.position.y = b.centerY + r * Math.sin(b.phi)
+      })
+
       // Camera focus animation (ease-out cubic)
       if (camAnimRef.current) {
         const ca = camAnimRef.current
@@ -263,7 +293,7 @@ export default function MapDefault() {
         if (hits.length > 0) {
           const { x, y, z } = hits[0].point
           markerPosRef.current = { x, z, y: y + 0.5 }
-          placeMarker(x, y + 0.5, z)
+          placeMarker(x, y, z)
           placed = true
           break
         }
@@ -305,14 +335,31 @@ export default function MapDefault() {
   function placeMarker(x: number, y: number, z: number) {
     const scene = sceneRef.current!
     if (markerRef.current) scene.remove(markerRef.current)
-    const geo = new THREE.ConeGeometry(0.6, 1.2, 8)
-    const mat = new THREE.MeshBasicMaterial({ color: 0xffe000, toneMapped: false })
-    const cone = new THREE.Mesh(geo, mat)
-    cone.position.set(x, y, z)
-    cone.rotation.x = Math.PI
-    cone.visible = false
-    scene.add(cone)
-    markerRef.current = cone
+
+    const group = new THREE.Group()
+    // 지면에서 살짝 띄움
+    group.position.set(x, y + 0.28, z)
+
+    // 바깥 스트로크 링
+    const outerGeo = new THREE.RingGeometry(0.5, 0.65, 48)
+    outerGeo.rotateX(-Math.PI / 2)
+    const outer = new THREE.Mesh(outerGeo, new THREE.MeshBasicMaterial({
+      color: 0xFBD600, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
+    }))
+    group.add(outer)
+
+    // 가운데 채워진 원
+    const innerGeo = new THREE.CircleGeometry(0.35, 48)
+    innerGeo.rotateX(-Math.PI / 2)
+    const inner = new THREE.Mesh(innerGeo, new THREE.MeshBasicMaterial({
+      color: 0xFBD600, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
+    }))
+    group.add(inner)
+
+    group.visible = false
+    group.renderOrder = 10
+    scene.add(group)
+    markerRef.current = group
   }
 
   // ── Grid overlay ──
@@ -436,7 +483,10 @@ export default function MapDefault() {
   }, [gridMode, getHit])
 
   // ── Go to camera ──
-  const goToCamera = useCallback(() => {
+  async function handleImageSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Save cell position before navigating
     if (selectedCell) {
       sessionStorage.setItem('selectedCell', JSON.stringify(selectedCell))
     } else if (markerPosRef.current) {
@@ -444,8 +494,27 @@ export default function MapDefault() {
       const sz = snapGrid(markerPosRef.current.z)
       sessionStorage.setItem('selectedCell', JSON.stringify({ x: sx, z: sz }))
     }
-    router.push('/camera')
-  }, [selectedCell, router])
+    const img = new window.Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1024
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(objectUrl)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75)
+      try {
+        sessionStorage.setItem('capturedImage', dataUrl)
+      } catch {
+        sessionStorage.setItem('capturedImage', canvas.toDataURL('image/jpeg', 0.5))
+      }
+      router.push('/extract')
+    }
+    img.src = objectUrl
+    e.target.value = ''
+  }
 
   // ── Focus marker (toggle) ──
   const focusMarker = useCallback(() => {
@@ -521,7 +590,12 @@ export default function MapDefault() {
     valid.forEach(p => {
       if (placedRef.current.has(cellKey(p.x, p.z))) return
       const isNew = !!newPos && p.x === newPos.x && p.z === newPos.z
-      spawnPipe(p.x, p.z, 0, p.scale ?? BASE_SCALE, p.colors, p.modelFile, p.photos ?? [], isNew)
+      const scale = p.scale ?? BASE_SCALE
+      spawnPipe(p.x, p.z, 0, scale, p.colors, p.modelFile, p.photos ?? [], isNew)
+        .then(() => {
+          // [8] Spawn floating bubbles immediately for existing pipes
+          if (!isNew) spawnFloatingBubbles(p.x, p.z, surfaceYRef.current, scale, cellKey(p.x, p.z))
+        })
         .catch(err => console.error('[pipe load] failed:', err))
     })
   }, [mapLoaded])
@@ -634,6 +708,8 @@ export default function MapDefault() {
 
       // Bubble effect on spawn
       spawnBubbles(x, y, z)
+      // Floating bubbles appear 1s after spawn
+      setTimeout(() => spawnFloatingBubbles(x, z, y, scale, cellKey(x, z)), 1000)
 
       // ── Merge check ──
       let nearEntry: PlacedEntry | null = null
@@ -673,9 +749,11 @@ export default function MapDefault() {
           requestAnimationFrame(anim)
         })
 
-        // Remove both objects
+        // Remove both objects + their floating bubbles
         scene.remove(wrapper)
         scene.remove(nearEntry.obj)
+        removeFloatingBubbles(cellKey(x, z))
+        removeFloatingBubbles(nearKey)
         placedRef.current.delete(cellKey(x, z))
         placedRef.current.delete(nearKey)
 
@@ -744,6 +822,42 @@ export default function MapDefault() {
         startMs: performance.now(),
         delay: Math.random() * 300,
         duration: 1000 + Math.random() * 1000,
+      })
+    }
+  }
+
+  function removeFloatingBubbles(key: string) {
+    const scene = sceneRef.current!
+    floatingBubblesRef.current.filter(b => b.cellKey === key).forEach(b => scene.remove(b.mesh))
+    floatingBubblesRef.current = floatingBubblesRef.current.filter(b => b.cellKey !== key)
+  }
+
+  function spawnFloatingBubbles(x: number, z: number, y: number, scale: number, key: string) {
+    const scene = sceneRef.current!
+    removeFloatingBubbles(key)
+    const BASE = 0.25
+    const stage = Math.max(1, Math.round(Math.log(scale / BASE) / Math.log(1.75)) + 1)
+    const count = 4 * Math.pow(2, stage - 1)
+    const maxRadius = 4 * Math.pow(2, stage - 1)
+    for (let i = 0; i < count; i++) {
+      const geo = new THREE.SphereGeometry(0.2, 8, 6)
+      const mat = new THREE.MeshBasicMaterial({ color: 0xFFD700, toneMapped: false })
+      const mesh = new THREE.Mesh(geo, mat)
+      scene.add(mesh)
+      const baseRadius = maxRadius * (0.3 + Math.random() * 0.7)
+      const theta = Math.random() * Math.PI * 2
+      const phi = (Math.random() - 0.5) * Math.PI * 0.8
+      floatingBubblesRef.current.push({
+        mesh, cellKey: key,
+        centerX: x, centerY: y + 1.5, centerZ: z,
+        radius: baseRadius,
+        theta, phi,
+        thetaSpeed: (0.3 + Math.random() * 0.5) * (Math.random() > 0.5 ? 1 : -1),
+        phiSpeed: (0.2 + Math.random() * 0.4) * (Math.random() > 0.5 ? 1 : -1),
+        radiusSpeed: 0.4 + Math.random() * 0.6,
+        radiusAmplitude: baseRadius * 0.3,
+        baseRadius,
+        phase: Math.random() * Math.PI * 2,
       })
     }
   }
@@ -879,7 +993,7 @@ export default function MapDefault() {
 
       {/* Camera button */}
       <button
-        onClick={goToCamera}
+        onClick={() => cameraInputRef.current?.click()}
         style={{
           position: 'absolute', bottom: 128, left: '50%', transform: 'translateX(-50%)',
           width: 64, height: 64, borderRadius: '50%', border: 'none',
@@ -891,6 +1005,10 @@ export default function MapDefault() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/icons/Camera.svg?v=2" alt="카메라" width={36} height={36} style={{ objectFit: 'contain' }} />
       </button>
+
+      {/* Hidden file input — no capture so iOS shows camera/album sheet */}
+      <input ref={cameraInputRef} type="file" accept="image/*"
+        style={{ display: 'none' }} onChange={handleImageSelected} />
 
       {/* Grid selected indicator */}
       {gridMode && selectedCell && (
