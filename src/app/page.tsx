@@ -108,7 +108,7 @@ export default function MapDefault() {
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
   // State
-  const [theme, setTheme] = useState<ThemeKey>('default')
+  const [theme, setTheme] = useState<ThemeKey>('blue')
   const [gridMode, setGridMode] = useState(false)
   const [selectedCell, setSelectedCell] = useState<{ x: number; z: number } | null>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
@@ -123,7 +123,7 @@ export default function MapDefault() {
     const H = canvas.clientHeight || window.innerHeight
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(MAP_THEMES.default.bg)
+    scene.background = new THREE.Color(MAP_THEMES.blue.bg)
     sceneRef.current = scene
 
     const camera = new THREE.PerspectiveCamera(22, W / H, 0.1, 2000)
@@ -330,7 +330,7 @@ export default function MapDefault() {
     setMapLoaded(true)
   }, [])
 
-  useEffect(() => { loadMap('default') }, [loadMap])
+  useEffect(() => { loadMap('blue') }, [loadMap])
 
   function placeMarker(x: number, y: number, z: number) {
     const scene = sceneRef.current!
