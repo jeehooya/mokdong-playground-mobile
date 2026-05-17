@@ -309,8 +309,10 @@ export default function MapDefault() {
       const rc = new THREE.Raycaster()
       let placed = false
       for (let attempt = 0; attempt < 30; attempt++) {
-        const rx = mbox.min.x + Math.random() * (mbox.max.x - mbox.min.x)
-        const rz = mbox.min.z + Math.random() * (mbox.max.z - mbox.min.z)
+        const marginX = (mbox.max.x - mbox.min.x) * 0.2
+        const marginZ = (mbox.max.z - mbox.min.z) * 0.2
+        const rx = mbox.min.x + marginX + Math.random() * (mbox.max.x - mbox.min.x - marginX * 2)
+        const rz = mbox.min.z + marginZ + Math.random() * (mbox.max.z - mbox.min.z - marginZ * 2)
         rc.set(new THREE.Vector3(rx, mbox.max.y + 10, rz), new THREE.Vector3(0, -1, 0))
         const hits = rc.intersectObject(mapFieldRef.current, true)
         if (hits.length > 0) {
@@ -917,8 +919,12 @@ export default function MapDefault() {
       ]
       const dir = directions[Math.floor(Math.random() * directions.length)]
       const fieldBox = new THREE.Box3().setFromObject(mapFieldRef.current!)
-      const newX = Math.max(fieldBox.min.x, Math.min(fieldBox.max.x, markerPosRef.current.x + dir.dx))
-      const newZ = Math.max(fieldBox.min.z, Math.min(fieldBox.max.z, markerPosRef.current.z + dir.dz))
+      const safeMinX = fieldBox.min.x + (fieldBox.max.x - fieldBox.min.x) * 0.2
+      const safeMaxX = fieldBox.max.x - (fieldBox.max.x - fieldBox.min.x) * 0.2
+      const safeMinZ = fieldBox.min.z + (fieldBox.max.z - fieldBox.min.z) * 0.2
+      const safeMaxZ = fieldBox.max.z - (fieldBox.max.z - fieldBox.min.z) * 0.2
+      const newX = Math.max(safeMinX, Math.min(safeMaxX, markerPosRef.current.x + dir.dx))
+      const newZ = Math.max(safeMinZ, Math.min(safeMaxZ, markerPosRef.current.z + dir.dz))
       const newY = markerPosRef.current.y
       markerPosRef.current = { x: newX, z: newZ, y: newY }
       sessionStorage.setItem('markerPos', JSON.stringify({ x: newX, z: newZ, y: newY }))
@@ -967,11 +973,9 @@ export default function MapDefault() {
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           padding: 8, width: 52,
-          background: 'rgba(237,237,237,0.1)',
+          background: 'transparent',
           border: '0.862px solid rgba(255,255,255,0.7)',
           borderRadius: 861,
-          backdropFilter: 'blur(9.6px)',
-          WebkitBackdropFilter: 'blur(9.6px)',
         }}>
           <button
             onClick={() => { if (gridMode) { setGridMode(false); setSelectedCell(null); if (highlightRef.current) highlightRef.current.visible = false; if (selectedHighlightRef.current) selectedHighlightRef.current.visible = false } }}
@@ -1004,8 +1008,7 @@ export default function MapDefault() {
           onClick={focusMarker}
           style={{
             width: 48, height: 48, borderRadius: '50%', border: '0.862px solid rgba(255,255,255,0.7)',
-            background: 'rgba(237,237,237,0.1)',
-            backdropFilter: 'blur(9.6px)', WebkitBackdropFilter: 'blur(9.6px)',
+            background: 'transparent',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', flexShrink: 0, padding: 4,
           }}
