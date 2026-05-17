@@ -67,7 +67,8 @@ export const PIPE_SVG_NAMES: Record<string, { no: string; yes: string }> = {
 }
 
 export const MAP_THEMES = {
-  default: { file: 'map_default.glb', fieldName: 'Map_Field',      bg: '#9EA385', filter: 'none' },
-  blue:    { file: 'map_blue.glb',    fieldName: 'Map_Field_Blue',  bg: '#4299b2', filter: 'brightness(0.9) contrast(0.8) saturate(1.4)' },
+  default: { file: 'map_default.glb',  fieldName: 'Map_Field',        bg: '#9EA385', filter: 'none' },
+  blue:    { file: 'map_blue.glb',     fieldName: 'Map_Field_Blue',   bg: '#4299b2', filter: 'brightness(0.9) contrast(0.8) saturate(1.4)' },
+  yellow:  { file: 'map_Yellow.glb',   fieldName: 'Map_Field_Yellow', bg: '#F5C800', filter: 'saturate(0.9) contrast(0.8) brightness(1.1)' },
 } as const
 export type ThemeKey = keyof typeof MAP_THEMES

@@ -117,6 +117,8 @@ export default function MapDefault() {
   const [photoPopup, setPhotoPopup] = useState<{ photos: string[] } | null>(null)
   const [locationActive, setLocationActive] = useState(false)
   const [cameraVisible, setCameraVisible] = useState(true)
+  const [themeOpen, setThemeOpen] = useState(false)
+  const themeContainerRef = useRef<HTMLDivElement>(null)
 
   // ── Scene init ──
   useEffect(() => {
@@ -270,6 +272,13 @@ export default function MapDefault() {
       if (obj instanceof THREE.Mesh) toFlat(obj)
       if (obj.name === t.fieldName) mapFieldRef.current = obj
     })
+    if (themeKey === 'yellow') {
+      gltf.traverse(obj => {
+        if (!(obj instanceof THREE.Mesh)) return
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+        mats.forEach((m: THREE.Material) => { m.toneMapped = false })
+      })
+    }
     scene.add(gltf)
     scene.updateMatrixWorld(true)
     currentMapRef.current = gltf
@@ -349,7 +358,7 @@ export default function MapDefault() {
     }
 
     // [6] Update highlight colors for theme
-    const hlColor = themeKey === 'blue' ? 0xFBD600 : 0x008CBF
+    const hlColor = themeKey === 'blue' ? 0xFBD600 : themeKey === 'yellow' ? 0x018CBF : 0x008CBF
     const hlMat = highlightRef.current?.material as THREE.MeshBasicMaterial | undefined
     const selMat = selectedHighlightRef.current?.material as THREE.MeshBasicMaterial | undefined
     if (hlMat) hlMat.color.set(hlColor)
@@ -360,27 +369,27 @@ export default function MapDefault() {
 
   useEffect(() => { loadMap('blue') }, [loadMap])
 
-  function placeMarker(x: number, y: number, z: number) {
+  function placeMarker(x: number, y: number, z: number, themeKey: ThemeKey = theme) {
     const scene = sceneRef.current!
     if (markerRef.current) scene.remove(markerRef.current)
 
+    // yellow 테마에서는 파란 마커, 나머지는 노란 마커
+    const markerColor = themeKey === 'yellow' ? 0x018CBF : 0xFBD600
+
     const group = new THREE.Group()
-    // 지면에서 살짝 띄움
     group.position.set(x, y + 0.28, z)
 
-    // 바깥 스트로크 링 (80% 크기)
     const outerGeo = new THREE.RingGeometry(0.4, 0.52, 48)
     outerGeo.rotateX(-Math.PI / 2)
     const outer = new THREE.Mesh(outerGeo, new THREE.MeshBasicMaterial({
-      color: 0xFBD600, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
+      color: markerColor, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
     }))
     group.add(outer)
 
-    // 가운데 채워진 원 (80% 크기)
     const innerGeo = new THREE.CircleGeometry(0.28, 48)
     innerGeo.rotateX(-Math.PI / 2)
     const inner = new THREE.Mesh(innerGeo, new THREE.MeshBasicMaterial({
-      color: 0xFBD600, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
+      color: markerColor, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
     }))
     group.add(inner)
 
@@ -592,6 +601,18 @@ export default function MapDefault() {
     setTheme(key)
     await loadMap(key)
   }, [loadMap])
+
+  // ── Theme dropdown outside click ──
+  useEffect(() => {
+    if (!themeOpen) return
+    const handler = (e: MouseEvent) => {
+      if (themeContainerRef.current && !themeContainerRef.current.contains(e.target as Node)) {
+        setThemeOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [themeOpen])
 
   // ── Load pipes (single effect to prevent duplicate spawning) ──
   // localStorage = source of truth for all pipes
@@ -964,11 +985,19 @@ export default function MapDefault() {
         }}>맵 로딩 중…</div>
       )}
 
-      {/* ── Right-side controls (Figma: glass pill + location) ── */}
       {/* ── Right-side controls ── */}
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .theme-dropdown {
+          animation: slideDown 0.2s ease forwards;
+        }
+      `}</style>
       <div style={{
-        position: 'absolute', top: 40, right: 20,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+        position: 'absolute', top: 64, right: 20,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
       }}>
         {/* Glass pill */}
         <div style={{
@@ -1021,23 +1050,56 @@ export default function MapDefault() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={locationActive ? '/icons/location_selected.svg?v=3' : '/icons/location_unselected.svg?v=3'} alt="내 위치" width={36} height={36} style={{ objectFit: 'contain' }} />
         </button>
-      </div>
 
-      {/* Map theme toggles */}
-      <div style={{ position: 'absolute', bottom: 104, right: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {(Object.keys(MAP_THEMES) as ThemeKey[]).map(key => (
+        {/* Theme toggle */}
+        <div ref={themeContainerRef} style={{ position: 'relative' }}>
           <button
-            key={key}
-            onClick={() => switchTheme(key)}
+            onClick={() => setThemeOpen(o => !o)}
             style={{
-              width: 24, height: 24, borderRadius: '50%',
-              border: theme === key ? '2.5px solid #fff' : '1.5px solid rgba(255,255,255,0.35)',
-              background: MAP_THEMES[key].bg, cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-              transform: theme === key ? 'scale(1.12)' : 'scale(1)', transition: 'transform 0.15s',
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'rgba(237,237,237,0.15)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '0.862px solid rgba(255,255,255,0.7)',
+              cursor: 'pointer', flexShrink: 0, padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
-          />
-        ))}
+          >
+            <div style={{
+              width: 24, height: 24, borderRadius: '50%',
+              background: MAP_THEMES[theme].bg,
+              border: '2px solid rgba(255,255,255,0.6)',
+            }} />
+          </button>
+          {themeOpen && (
+            <div className="theme-dropdown" style={{
+              position: 'absolute', top: 56, right: 0,
+              display: 'flex', flexDirection: 'column', gap: 8,
+            }}>
+              {(['blue', 'default', 'yellow'] as ThemeKey[]).map(key => (
+                <button
+                  key={key}
+                  onClick={() => { switchTheme(key); setThemeOpen(false) }}
+                  style={{
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: 'transparent',
+                    border: theme === key ? '2.5px solid rgba(255,255,255,0.9)' : '0.862px solid rgba(255,255,255,0.7)',
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: MAP_THEMES[key].bg,
+                    border: theme === key ? '2px solid rgba(255,255,255,0.9)' : '2px solid rgba(255,255,255,0.4)',
+                    transform: theme === key ? 'scale(1.1)' : 'scale(1)',
+                    transition: 'transform 0.15s',
+                  }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Camera button */}
