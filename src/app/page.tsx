@@ -1000,7 +1000,7 @@ export default function MapDefault() {
         }
       `}</style>
       <div style={{
-        position: 'absolute', top: 64, right: 20,
+        position: 'absolute', top: 40, right: 20,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
       }}>
         {/* Glass pill */}
