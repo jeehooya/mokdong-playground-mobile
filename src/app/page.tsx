@@ -129,6 +129,7 @@ export default function MapDefault() {
     controls.minPolarAngle = 0
     controls.minDistance = 8
     controls.maxDistance = 300
+    controls.zoomSpeed = 0.4
     controls.touches = {
       ONE: THREE.TOUCH.PAN,
       TWO: THREE.TOUCH.DOLLY_ROTATE,
@@ -381,7 +382,23 @@ export default function MapDefault() {
         for (const entry of placedRef.current.values()) {
           let node: THREE.Object3D | null = hitMesh
           while (node) {
-            if (node === entry.obj) { setPhotoPopup({ photos: entry.photos }); return }
+            if (node === entry.obj) {
+              // [2] Animate camera target to clicked pipe
+              const fromTarget = controlsRef.current!.target.clone()
+              const toTarget = new THREE.Vector3(entry.x, entry.y, entry.z)
+              const startMs = performance.now()
+              const dur = 600
+              const animTarget = () => {
+                const t = Math.min(1, (performance.now() - startMs) / dur)
+                const ev = 1 - Math.pow(1 - t, 3)
+                controlsRef.current!.target.lerpVectors(fromTarget, toTarget, ev)
+                controlsRef.current!.update()
+                if (t < 1) requestAnimationFrame(animTarget)
+              }
+              requestAnimationFrame(animTarget)
+              setPhotoPopup({ photos: entry.photos })
+              return
+            }
             node = node.parent
           }
         }
@@ -445,10 +462,22 @@ export default function MapDefault() {
         target: controls.target.clone(),
       }
       const { x, y, z } = markerPosRef.current
+      const fromTarget = controls.target.clone()
+      const toTarget = new THREE.Vector3(x, y - 0.5, z)
+      const fromCamPos = camera.position.clone()
+      const toCamPos = new THREE.Vector3(x + 20, y + 16, z + 20)
+      const startMs = performance.now()
+      const dur = 700
+      const animFocus = () => {
+        const t = Math.min(1, (performance.now() - startMs) / dur)
+        const ev = 1 - Math.pow(1 - t, 3)
+        controls.target.lerpVectors(fromTarget, toTarget, ev)
+        camera.position.lerpVectors(fromCamPos, toCamPos, ev)
+        controls.update()
+        if (t < 1) requestAnimationFrame(animFocus)
+      }
+      requestAnimationFrame(animFocus)
       if (markerRef.current) markerRef.current.visible = true
-      controls.target.set(x, y - 0.5, z)
-      camera.position.set(x + 20, y + 16, z + 20)
-      controls.update()
       setLocationActive(true)
     }
   }, [locationActive])
@@ -475,10 +504,16 @@ export default function MapDefault() {
     let stored: PlacedEntry[] = []
     try { stored = JSON.parse(localStorage.getItem('pipes') ?? '[]') } catch { return }
 
-    stored.forEach(p => {
+    // [2] Filter: only spawn entries with valid colors and modelFile
+    const valid = stored.filter(p =>
+      p.modelFile &&
+      Array.isArray(p.colors) && p.colors.length > 0
+    )
+
+    valid.forEach(p => {
       if (placedRef.current.has(cellKey(p.x, p.z))) return
       const isNew = !!newPos && p.x === newPos.x && p.z === newPos.z
-      spawnPipe(p.x, p.z, 0, p.scale ?? BASE_SCALE, p.colors ?? [], p.modelFile, p.photos ?? [], isNew)
+      spawnPipe(p.x, p.z, 0, p.scale ?? BASE_SCALE, p.colors, p.modelFile, p.photos ?? [], isNew)
         .catch(err => console.error('[pipe load] failed:', err))
     })
   }, [mapLoaded])
@@ -490,6 +525,17 @@ export default function MapDefault() {
   ) {
     const scene = sceneRef.current
     if (!scene) { console.error('[spawnPipe] scene not ready'); return }
+
+    // [1] Validate colors
+    if (!colors || colors.length === 0) {
+      console.warn('[spawnPipe] no colors provided — skipping', modelFile)
+      return
+    }
+    const validColors = colors.filter(c => c && c.length > 1)
+    if (validColors.length === 0) {
+      console.warn('[spawnPipe] all colors invalid — skipping', modelFile)
+      return
+    }
 
     // Surface Y — use measured value; raycast as fallback; hardcoded last resort
     let y = surfaceYRef.current
@@ -528,8 +574,8 @@ export default function MapDefault() {
       const applyMat = (mat: THREE.Material): THREE.MeshBasicMaterial => {
         const nameIdx = NAME_TO_IDX[mat.name]
         let hex: string | undefined =
-          nameIdx !== undefined ? colors[nameIdx] : undefined
-        if (!hex) hex = colors[meshIdx]
+          nameIdx !== undefined ? validColors[nameIdx] : undefined
+        if (!hex) hex = validColors[meshIdx]
         if (!hex) {
           const c = (mat as THREE.MeshStandardMaterial).color
           if (c) hex = `#${c.getHexString()}`
