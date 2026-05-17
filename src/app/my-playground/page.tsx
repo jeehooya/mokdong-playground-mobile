@@ -90,7 +90,7 @@ export default function MyPlayground() {
                 <div style={{ textAlign: 'center' }}>
                   <p style={{
                     fontFamily: 'Pretendard, sans-serif',
-                    fontSize: 16, fontWeight: 700, color: '#000',
+                    fontSize: 16, fontWeight: 600, color: '#000',
                     letterSpacing: -0.016, lineHeight: 1.5,
                     margin: '0 0 4px',
                   }}>{name}</p>

@@ -280,8 +280,16 @@ export default function MapDefault() {
     // Set camera target to map center
     const center = box.getCenter(new THREE.Vector3())
 
-    // ── Marker placement — always random on each load ──
-    if (mapFieldRef.current) {
+    // ── Marker placement — sessionStorage 우선, 없으면 랜덤 생성 ──
+    const savedPos = sessionStorage.getItem('markerPos')
+    if (savedPos) {
+      try {
+        const { x, z, y } = JSON.parse(savedPos)
+        markerPosRef.current = { x, z, y }
+        placeMarker(x, y, z)
+      } catch { /* ignore, fall through to random */ }
+    }
+    if (!markerPosRef.current && mapFieldRef.current) {
       const mbox = new THREE.Box3().setFromObject(mapFieldRef.current)
       const rc = new THREE.Raycaster()
       let placed = false
@@ -294,6 +302,7 @@ export default function MapDefault() {
           const { x, y, z } = hits[0].point
           markerPosRef.current = { x, z, y: y + 0.5 }
           placeMarker(x, y, z)
+          sessionStorage.setItem('markerPos', JSON.stringify({ x, z, y: y + 0.5 }))
           placed = true
           break
         }
@@ -304,6 +313,7 @@ export default function MapDefault() {
         const cy = mbox.max.y + 0.5
         markerPosRef.current = { x: cx, z: cz, y: cy }
         placeMarker(cx, cy, cz)
+        sessionStorage.setItem('markerPos', JSON.stringify({ x: cx, z: cz, y: cy }))
       }
     }
 
@@ -340,16 +350,16 @@ export default function MapDefault() {
     // 지면에서 살짝 띄움
     group.position.set(x, y + 0.28, z)
 
-    // 바깥 스트로크 링
-    const outerGeo = new THREE.RingGeometry(0.5, 0.65, 48)
+    // 바깥 스트로크 링 (80% 크기)
+    const outerGeo = new THREE.RingGeometry(0.4, 0.52, 48)
     outerGeo.rotateX(-Math.PI / 2)
     const outer = new THREE.Mesh(outerGeo, new THREE.MeshBasicMaterial({
       color: 0xFBD600, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
     }))
     group.add(outer)
 
-    // 가운데 채워진 원
-    const innerGeo = new THREE.CircleGeometry(0.35, 48)
+    // 가운데 채워진 원 (80% 크기)
+    const innerGeo = new THREE.CircleGeometry(0.28, 48)
     innerGeo.rotateX(-Math.PI / 2)
     const inner = new THREE.Mesh(innerGeo, new THREE.MeshBasicMaterial({
       color: 0xFBD600, opacity: 1, transparent: false, depthWrite: false, toneMapped: false,
@@ -593,8 +603,23 @@ export default function MapDefault() {
       const scale = p.scale ?? BASE_SCALE
       spawnPipe(p.x, p.z, 0, scale, p.colors, p.modelFile, p.photos ?? [], isNew)
         .then(() => {
-          // [8] Spawn floating bubbles immediately for existing pipes
           if (!isNew) spawnFloatingBubbles(p.x, p.z, surfaceYRef.current, scale, cellKey(p.x, p.z))
+
+          // [2] 새 파이프일 때 마커 위치를 랜덤 1~3칸 이동
+          if (isNew && markerPosRef.current && mapFieldRef.current) {
+            const pos = markerPosRef.current
+            const fieldBox = new THREE.Box3().setFromObject(mapFieldRef.current!)
+            const move = Math.floor(Math.random() * 3) + 1
+            const angle = Math.random() * Math.PI * 2
+            const newX = Math.max(fieldBox.min.x, Math.min(fieldBox.max.x,
+              pos.x + Math.round(Math.cos(angle) * move)))
+            const newZ = Math.max(fieldBox.min.z, Math.min(fieldBox.max.z,
+              pos.z + Math.round(Math.sin(angle) * move)))
+            const newMarkerPos = { x: newX, z: newZ, y: pos.y }
+            markerPosRef.current = newMarkerPos
+            sessionStorage.setItem('markerPos', JSON.stringify(newMarkerPos))
+            if (markerRef.current) markerRef.current.position.set(newX, pos.y, newZ)
+          }
         })
         .catch(err => console.error('[pipe load] failed:', err))
     })
@@ -881,6 +906,7 @@ export default function MapDefault() {
       const newZ = Math.max(fieldBox.min.z, Math.min(fieldBox.max.z, markerPosRef.current.z + dir.dz))
       const newY = markerPosRef.current.y
       markerPosRef.current = { x: newX, z: newZ, y: newY }
+      sessionStorage.setItem('markerPos', JSON.stringify({ x: newX, z: newZ, y: newY }))
       if (markerRef.current) {
         markerRef.current.position.set(newX, newY, newZ)
       }

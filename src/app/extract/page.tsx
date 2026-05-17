@@ -4,18 +4,26 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { extractSlotColors, SlotColors } from '@/lib/colors'
 
+const SLOTS = [
+  { key: 'milk' as const,        label: 'ORANGE' },
+  { key: 'skyblue' as const,     label: 'GREEN' },
+  { key: 'brown' as const,       label: 'IVORY' },
+  { key: 'insideGreen' as const, label: 'BROWN' },
+]
+
 export default function ExtractColor() {
   const router = useRouter()
-  const [imageSrc, setImageSrc] = useState<string | null>(null)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [colors, setColors] = useState<SlotColors | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  // [7] 마운트 시 자동 색상 추출
   useEffect(() => {
     const src = sessionStorage.getItem('capturedImage')
-    if (!src) { router.replace('/camera'); return }
-    setImageSrc(src)
+    if (!src) { router.replace('/'); return }
+    setImageUrl(src)
 
-    const img = new Image()
+    const img = new window.Image()
     img.onload = () => {
       const canvas = canvasRef.current!
       canvas.width = img.naturalWidth
@@ -28,87 +36,117 @@ export default function ExtractColor() {
     img.src = src
   }, [router])
 
-  const confirm = () => {
+  // [6] 확인 버튼
+  const handleConfirm = () => {
     if (!colors) return
     sessionStorage.setItem('slotColors', JSON.stringify(colors))
     router.push('/add-playground')
   }
 
-  const LABELS = [
-    { key: 'milk' as const,        label: 'Milk' },
-    { key: 'skyblue' as const,     label: 'Skyblue' },
-    { key: 'brown' as const,       label: 'Brown' },
-    { key: 'insideGreen' as const, label: 'Inside Green' },
-  ]
-
   return (
-    <div style={{ minHeight: '100dvh', background: '#F0EAD6', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      width: '100%',
+      minHeight: '100dvh',
+      background: '#F0EAD6',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
-      <div style={{ height: 48 }} />
 
-      {/* Header */}
+      {/* [2] 헤더 */}
       <div style={{
-        padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24,
+        height: 104,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+        paddingBottom: 16, paddingLeft: 20, paddingRight: 20,
       }}>
-        <h1 style={{ fontFamily: 'Pretendard, sans-serif', fontSize: 18, fontWeight: 700, color: '#3A2E1A' }}>
-          놀이터 색상 추출
-        </h1>
-        <button onClick={() => router.back()}
-          style={{ background: 'none', border: 'none', color: '#3A2E1A', fontSize: 24, cursor: 'pointer' }}>×</button>
-      </div>
-
-      {/* Photo */}
-      {imageSrc && (
-        <div style={{ padding: '0 24px', marginBottom: 24 }}>
-          <img
-            src={imageSrc}
-            alt="선택한 사진"
-            style={{
-              width: '100%', borderRadius: 16,
-              border: '3px solid #FFE000',
-              objectFit: 'cover', maxHeight: 260,
-            }}
-          />
-        </div>
-      )}
-
-      {/* Colors */}
-      {colors && (
-        <div style={{ padding: '0 24px', marginBottom: 32 }}>
-          <p style={{ fontFamily: 'Pretendard, sans-serif', fontSize: 13, color: '#6B5A3A', marginBottom: 12 }}>
-            추출된 색상
-          </p>
-          <div style={{ display: 'flex', gap: 12 }}>
-            {LABELS.map(({ key, label }) => (
-              <div key={key} style={{ textAlign: 'center', flex: 1 }}>
-                <div style={{
-                  width: '100%', aspectRatio: '1', borderRadius: 12,
-                  background: colors[key],
-                  border: '2px solid rgba(0,0,0,0.08)',
-                  boxShadow: `0 4px 12px ${colors[key]}66`,
-                  marginBottom: 6,
-                }} />
-                <span style={{ fontSize: 10, color: '#6B5A3A', fontFamily: 'Pretendard, sans-serif' }}>{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Confirm */}
-      <div style={{ padding: '0 24px', marginTop: 'auto', paddingBottom: 40 }}>
+        <div style={{ width: 28 }} />
+        <span style={{
+          fontSize: 18, fontWeight: 700, color: '#000',
+          fontFamily: 'Pretendard, sans-serif',
+        }}>색깔 칠하기</span>
         <button
-          onClick={confirm}
-          disabled={!colors}
+          onClick={() => router.push('/')}
           style={{
-            width: '100%', height: 56, borderRadius: 28, border: 'none',
-            background: colors ? '#FFE000' : '#ccc',
-            fontFamily: 'Pretendard, sans-serif', fontSize: 16, fontWeight: 700, color: '#3A2E1A',
-            cursor: colors ? 'pointer' : 'not-allowed',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            width: 28, height: 28,
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 0,
           }}
         >
-          ✓ 색상 확정하기
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/close.svg" alt="닫기" width={20} height={20}
+            style={{ objectFit: 'contain' }} />
+        </button>
+      </div>
+
+      {/* [3] 사진 표시 */}
+      <div style={{ marginTop: 32, paddingLeft: 20, paddingRight: 20 }}>
+        <div style={{
+          width: '100%',
+          aspectRatio: '325 / 329',
+          borderRadius: 9,
+          overflow: 'hidden',
+          border: '2px solid #000',
+          boxShadow: '0px 4px 18px 3px rgba(0,0,0,0.11)',
+          background: imageUrl ? 'transparent' : '#ccc',
+        }}>
+          {imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt="선택한 사진"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* [4] 추출 색상 */}
+      <div style={{
+        marginTop: 32,
+        display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center',
+      }}>
+        {SLOTS.map(({ key, label }) => (
+          <div key={key} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+            <div style={{
+              width: 22, height: 22, borderRadius: '50%',
+              background: colors ? colors[key] : '#ddd',
+              flexShrink: 0,
+            }} />
+            <span style={{
+              fontSize: 12, fontWeight: 500, color: '#000',
+              fontFamily: 'Pretendard, sans-serif',
+            }}>{label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* [6] 확인 버튼 */}
+      <div style={{ marginTop: 40, display: 'flex', justifyContent: 'center' }}>
+        <button
+          onClick={handleConfirm}
+          disabled={!colors}
+          style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: '#FFD900', border: '2px solid #000',
+            cursor: colors ? 'pointer' : 'not-allowed',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: colors ? 1 : 0.5,
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/아이콘_체크.svg" alt="확인"
+            width={26} height={20}
+            style={{ objectFit: 'contain' }}
+            onError={(e) => {
+              const t = e.target as HTMLImageElement
+              t.style.display = 'none'
+              const span = document.createElement('span')
+              span.textContent = '✓'
+              span.style.cssText = 'font-size:28px;color:#000;font-weight:700;'
+              t.parentElement?.appendChild(span)
+            }}
+          />
         </button>
       </div>
     </div>
