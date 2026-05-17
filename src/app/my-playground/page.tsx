@@ -12,16 +12,28 @@ export default function MyPlayground() {
   const [pipes, setPipes] = useState<PipeData[]>([])
 
   useEffect(() => {
-    const stored: Record<string, boolean> = {}
     try {
-      const raw = JSON.parse(localStorage.getItem('pipes') ?? '[]')
-      raw.forEach((p: { modelFile: string }) => { stored[p.modelFile] = true })
+      const storedRaw = JSON.parse(localStorage.getItem('pipes') ?? '[]')
+      const discoveredMap: Record<string, number> = {}
+      storedRaw.forEach((p: { modelFile: string }, idx: number) => {
+        discoveredMap[p.modelFile] = idx
+      })
+
+      const discovered = PIPE_MODELS
+        .filter(f => discoveredMap[f] !== undefined)
+        .sort((a, b) => discoveredMap[b] - discoveredMap[a])
+        .map(f => ({ modelFile: f, discovered: true }))
+
+      const undiscovered = PIPE_MODELS
+        .filter(f => discoveredMap[f] === undefined)
+        .map(f => ({ modelFile: f, discovered: false }))
+
+      setPipes([...discovered, ...undiscovered])
     } catch { /* ignore */ }
-    setPipes(PIPE_MODELS.map(f => ({ modelFile: f, discovered: !!stored[f] })))
   }, [])
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflowY: 'auto', overflowX: 'hidden', background: '#6F674C' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', background: '#6F674C' }}>
       <style>{`
         .pipe-grid {
           display: grid;
@@ -36,11 +48,9 @@ export default function MyPlayground() {
         }
       `}</style>
 
-      {/* Status bar */}
-      <div style={{ height: 48, paddingTop: 'env(safe-area-inset-top, 0px)' }} />
-
-      {/* Sticky header */}
+      {/* Header */}
       <div style={{
+        flexShrink: 0,
         position: 'sticky', top: 0, zIndex: 10,
         background: '#6F674C',
         height: 56,
@@ -65,7 +75,8 @@ export default function MyPlayground() {
         <div style={{ flex: 1 }} />
       </div>
 
-      {/* Card grid */}
+      {/* Scrollable grid */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
       <div className="pipe-grid">
         {pipes.map(({ modelFile, discovered }) => {
           const svgEntry = PIPE_SVG_NAMES[modelFile]
@@ -133,6 +144,7 @@ export default function MyPlayground() {
             </div>
           )
         })}
+      </div>
       </div>
     </div>
   )
