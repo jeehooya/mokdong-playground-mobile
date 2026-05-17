@@ -100,11 +100,9 @@ export default function AddPlayground() {
     <div
       ref={containerRef}
       style={{
-        width: '100%',
-        minHeight: '100dvh',
-        background: '#018CBF',
-        position: 'relative',
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
         overflow: 'hidden',
+        background: '#018CBF',
       }}
     >
       {/* Bouncing bubbles */}

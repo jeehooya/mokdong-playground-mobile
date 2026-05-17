@@ -18,15 +18,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body>
         <div style={{
-          position: 'relative',
-          width: '100%',
-          minWidth: 393,
-          minHeight: '100dvh',
-          margin: '0 auto',
-          background: '#8F976F',
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
           overflow: 'hidden',
         }}>
-          <main style={{ paddingBottom: 64 }}>
+          <main style={{ width: '100%', height: '100%' }}>
             {children}
           </main>
           <TabBar />

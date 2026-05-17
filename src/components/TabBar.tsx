@@ -55,21 +55,18 @@ export default function TabBar() {
 
   return (
     <div style={{
-      position: 'fixed',
-      bottom: 0,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: 393,
-      padding: '0 20px',
-      paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+      position: 'fixed', bottom: 0, left: 0, right: 0,
       zIndex: 100,
+      display: 'flex', justifyContent: 'center',
       pointerEvents: 'none',
     }}>
       <nav style={{
+        width: 393,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
         background: '#F0EAD6',
+        marginBottom: 'max(12px, env(safe-area-inset-bottom))',
         borderRadius: 861,
         paddingTop: 4,
         paddingBottom: 12,

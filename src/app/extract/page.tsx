@@ -45,8 +45,8 @@ export default function ExtractColor() {
 
   return (
     <div style={{
-      width: '100%',
-      minHeight: '100dvh',
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      overflowY: 'auto', overflowX: 'hidden',
       background: '#F0EAD6',
       display: 'flex',
       flexDirection: 'column',

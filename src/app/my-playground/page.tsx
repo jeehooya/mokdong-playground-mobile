@@ -21,7 +21,7 @@ export default function MyPlayground() {
   }, [])
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#6F674C' }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflowY: 'auto', overflowX: 'hidden', background: '#6F674C' }}>
       <style>{`
         .pipe-grid {
           display: grid;

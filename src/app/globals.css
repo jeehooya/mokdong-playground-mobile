@@ -13,6 +13,8 @@ html, body {
   padding: 0;
   background: #8F976F;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow: hidden;
+  position: fixed;
 }
 
 #__next {

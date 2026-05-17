@@ -106,6 +106,7 @@ export default function MapDefault() {
   const camAnimRef = useRef<CamAnim | null>(null)
   const isFirstLoadRef = useRef(true)
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const cameraHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // State
   const [theme, setTheme] = useState<ThemeKey>('blue')
@@ -115,6 +116,7 @@ export default function MapDefault() {
   const [nameToast, setNameToast] = useState<{ text: string; id: number } | null>(null)
   const [photoPopup, setPhotoPopup] = useState<{ photos: string[] } | null>(null)
   const [locationActive, setLocationActive] = useState(false)
+  const [cameraVisible, setCameraVisible] = useState(true)
 
   // ── Scene init ──
   useEffect(() => {
@@ -153,6 +155,17 @@ export default function MapDefault() {
       TWO: THREE.TOUCH.DOLLY_ROTATE,
     }
     controlsRef.current = controls
+
+    const hideCameraBtn = () => {
+      if (cameraHideTimer.current) clearTimeout(cameraHideTimer.current)
+      cameraHideTimer.current = setTimeout(() => setCameraVisible(false), 800)
+    }
+    const showCameraBtn = () => {
+      if (cameraHideTimer.current) clearTimeout(cameraHideTimer.current)
+      setCameraVisible(true)
+    }
+    controls.addEventListener('start', hideCameraBtn)
+    controls.addEventListener('end', showCameraBtn)
 
     // Hover highlight
     const hlGeo = new THREE.PlaneGeometry(GRID - 0.05, GRID - 0.05)
@@ -234,6 +247,8 @@ export default function MapDefault() {
     return () => {
       cancelAnimationFrame(rafRef.current)
       window.removeEventListener('resize', onResize)
+      controls.removeEventListener('start', hideCameraBtn)
+      controls.removeEventListener('end', showCameraBtn)
       renderer.dispose()
     }
   }, [])
@@ -923,14 +938,14 @@ export default function MapDefault() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100dvh', background: MAP_THEMES[theme].bg }}>
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', background: MAP_THEMES[theme].bg }}>
       {/* Three.js canvas */}
       <canvas
         ref={canvasRef}
-        style={{ display: 'block', width: '100%', height: '100%', touchAction: 'none', filter: MAP_THEMES[theme].filter }}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', touchAction: 'none', filter: MAP_THEMES[theme].filter }}
         onMouseMove={onMouseMove}
         onClick={onCanvasClick}
-        onTouchEnd={onCanvasClick}
+        onTouchEnd={(e) => { onCanvasClick(e); setCameraVisible(true); if (cameraHideTimer.current) clearTimeout(cameraHideTimer.current) }}
       />
 
       {/* Loading */}
@@ -1021,7 +1036,10 @@ export default function MapDefault() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         style={{
-          position: 'absolute', bottom: 128, left: '50%', transform: 'translateX(-50%)',
+          position: 'absolute', bottom: 128,
+          left: '50%',
+          transform: cameraVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(120px)',
+          transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
           width: 64, height: 64, borderRadius: '50%', border: 'none',
           background: '#FFD900', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
