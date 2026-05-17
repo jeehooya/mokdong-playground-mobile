@@ -121,8 +121,8 @@ export default function MapDefault() {
   // ── Scene init ──
   useEffect(() => {
     const canvas = canvasRef.current!
-    const W = canvas.clientWidth || window.innerWidth
-    const H = canvas.clientHeight || window.innerHeight
+    const W = window.innerWidth
+    const H = window.innerHeight
 
     const scene = new THREE.Scene()
     scene.background = new THREE.Color(MAP_THEMES.blue.bg)
@@ -237,7 +237,8 @@ export default function MapDefault() {
     tick()
 
     const onResize = () => {
-      const w = canvas.clientWidth, h = canvas.clientHeight
+      const w = window.innerWidth
+      const h = window.innerHeight
       camera.aspect = w / h
       camera.updateProjectionMatrix()
       renderer.setSize(w, h)
@@ -948,7 +949,7 @@ export default function MapDefault() {
       {/* Three.js canvas */}
       <canvas
         ref={canvasRef}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', touchAction: 'none', filter: MAP_THEMES[theme].filter }}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'block', touchAction: 'none', filter: MAP_THEMES[theme].filter }}
         onMouseMove={onMouseMove}
         onClick={onCanvasClick}
         onTouchEnd={(e) => { onCanvasClick(e); setCameraVisible(true); if (cameraHideTimer.current) clearTimeout(cameraHideTimer.current) }}
@@ -973,7 +974,9 @@ export default function MapDefault() {
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           padding: 8, width: 52,
-          background: 'transparent',
+          background: 'rgba(237,237,237,0.15)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
           border: '0.862px solid rgba(255,255,255,0.7)',
           borderRadius: 861,
         }}>
@@ -1008,7 +1011,9 @@ export default function MapDefault() {
           onClick={focusMarker}
           style={{
             width: 48, height: 48, borderRadius: '50%', border: '0.862px solid rgba(255,255,255,0.7)',
-            background: 'transparent',
+            background: 'rgba(237,237,237,0.15)',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', flexShrink: 0, padding: 4,
           }}
@@ -1039,7 +1044,7 @@ export default function MapDefault() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         style={{
-          position: 'absolute', bottom: 128,
+          position: 'absolute', bottom: 108,
           left: '50%',
           transform: cameraVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(120px)',
           transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',

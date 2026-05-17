@@ -74,7 +74,7 @@ export default function ExtractColor() {
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/close.svg" alt="닫기" width={20} height={20}
+          <img src="/icons/close_black.svg" alt="닫기" width={20} height={20}
             style={{ objectFit: 'contain' }} />
         </button>
       </div>
@@ -127,7 +127,7 @@ export default function ExtractColor() {
           onClick={handleConfirm}
           style={{ background: 'none', border: 'none', cursor: colors ? 'pointer' : 'not-allowed', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: colors ? 1 : 0.4 }}
         >
-          <Image src="/icons/Extract_Check.svg" alt="확인" width={80} height={80} style={{ objectFit: 'contain' }} />
+          <Image src="/icons/Btn_Extract_Check.svg" alt="확인" width={80} height={80} style={{ objectFit: 'contain' }} />
         </button>
       </div>
     </div>

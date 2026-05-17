@@ -8,20 +8,12 @@
 
 html {
   height: 100%;
-  width: 100%;
   overflow: hidden;
 }
 
 body {
   height: 100%;
-  width: 100%;
   overflow: hidden;
-  margin: 0;
-  padding: 0;
-  background: transparent;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-}
-
-#__next {
-  height: 100%;
+  background: transparent;
 }
