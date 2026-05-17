@@ -957,9 +957,13 @@ export default function MapDefault() {
     return () => clearInterval(interval)
   }, [mapLoaded])
 
-  // Sync body background to current theme (matches desktop behaviour)
+  // Sync body background + theme-color meta to current theme
   useEffect(() => {
     document.body.style.background = MAP_THEMES[theme].bg
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', MAP_THEMES[theme].bg)
+    }
     return () => { document.body.style.background = '' }
   }, [theme])
 
@@ -1106,7 +1110,7 @@ export default function MapDefault() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         style={{
-          position: 'absolute', bottom: 108,
+          position: 'absolute', bottom: 100,
           left: '50%',
           transform: cameraVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(120px)',
           transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',

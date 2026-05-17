@@ -4,6 +4,9 @@ import TabBar from '@/components/TabBar'
 
 export const metadata: Metadata = {
   title: '목동 놀이터',
+  other: {
+    'theme-color': '#4299b2',
+  },
 }
 
 export const viewport: Viewport = {
