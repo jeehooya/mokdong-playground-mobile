@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          overflow: 'hidden',
+          overflow: 'hidden', background: 'transparent',
         }}>
           <main style={{ width: '100%', height: '100%' }}>
             {children}

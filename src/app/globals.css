@@ -6,25 +6,22 @@
   padding: 0;
 }
 
-html, body {
+html {
   height: 100%;
   width: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
   margin: 0;
   padding: 0;
-  background: #8F976F;
+  background: transparent;
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
-  overflow: hidden;
-  position: fixed;
 }
 
 #__next {
-  display: flex;
-  justify-content: center;
-}
-
-.app-container {
-  width: 100%;
-  min-width: 393px;
-  min-height: 100dvh;
-  position: relative;
+  height: 100%;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { extractSlotColors, SlotColors } from '@/lib/colors'
 
 const SLOTS = [
@@ -17,7 +18,6 @@ export default function ExtractColor() {
   const [colors, setColors] = useState<SlotColors | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // [7] 마운트 시 자동 색상 추출
   useEffect(() => {
     const src = sessionStorage.getItem('capturedImage')
     if (!src) { router.replace('/'); return }
@@ -36,7 +36,6 @@ export default function ExtractColor() {
     img.src = src
   }, [router])
 
-  // [6] 확인 버튼
   const handleConfirm = () => {
     if (!colors) return
     sessionStorage.setItem('slotColors', JSON.stringify(colors))
@@ -53,11 +52,12 @@ export default function ExtractColor() {
     }}>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-      {/* [2] 헤더 */}
+      {/* 헤더 */}
       <div style={{
         height: 104,
         display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
         paddingBottom: 16, paddingLeft: 20, paddingRight: 20,
+        flexShrink: 0,
       }}>
         <div style={{ width: 28 }} />
         <span style={{
@@ -79,8 +79,8 @@ export default function ExtractColor() {
         </button>
       </div>
 
-      {/* [3] 사진 표시 */}
-      <div style={{ marginTop: 32, paddingLeft: 20, paddingRight: 20 }}>
+      {/* 사진 표시 */}
+      <div style={{ marginTop: 32, paddingLeft: 20, paddingRight: 20, overflow: 'hidden', flexShrink: 0 }}>
         <div style={{
           width: '100%',
           aspectRatio: '325 / 329',
@@ -101,9 +101,9 @@ export default function ExtractColor() {
         </div>
       </div>
 
-      {/* [4] 추출 색상 */}
+      {/* 추출 색상 */}
       <div style={{
-        marginTop: 32,
+        marginTop: 32, flexShrink: 0,
         display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center',
       }}>
         {SLOTS.map(({ key, label }) => (
@@ -121,32 +121,13 @@ export default function ExtractColor() {
         ))}
       </div>
 
-      {/* [6] 확인 버튼 */}
-      <div style={{ marginTop: 40, display: 'flex', justifyContent: 'center' }}>
+      {/* 확인 버튼 (SVG) */}
+      <div style={{ marginTop: 40, flexShrink: 0, display: 'flex', justifyContent: 'center', paddingBottom: 40 }}>
         <button
           onClick={handleConfirm}
-          disabled={!colors}
-          style={{
-            width: 80, height: 80, borderRadius: '50%',
-            background: '#FFD900', border: '2px solid #000',
-            cursor: colors ? 'pointer' : 'not-allowed',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: colors ? 1 : 0.5,
-          }}
+          style={{ background: 'none', border: 'none', cursor: colors ? 'pointer' : 'not-allowed', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: colors ? 1 : 0.4 }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/아이콘_체크.svg" alt="확인"
-            width={26} height={20}
-            style={{ objectFit: 'contain' }}
-            onError={(e) => {
-              const t = e.target as HTMLImageElement
-              t.style.display = 'none'
-              const span = document.createElement('span')
-              span.textContent = '✓'
-              span.style.cssText = 'font-size:28px;color:#000;font-weight:700;'
-              t.parentElement?.appendChild(span)
-            }}
-          />
+          <Image src="/icons/Extract_Check.svg" alt="확인" width={80} height={80} style={{ objectFit: 'contain' }} />
         </button>
       </div>
     </div>
