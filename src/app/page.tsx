@@ -77,6 +77,7 @@ export default function MapDefault() {
   const currentMapRef = useRef<THREE.Group | null>(null)
   const gradMeshRef = useRef<THREE.LineSegments | null>(null)
   const highlightRef = useRef<THREE.Mesh | null>(null)
+  const selectedHighlightRef = useRef<THREE.Mesh | null>(null)
   const markerRef = useRef<THREE.Mesh | null>(null)
   const rafRef = useRef(0)
   const bubblesRef = useRef<BubbleAnim[]>([])
@@ -137,14 +138,24 @@ export default function MapDefault() {
     controlsRef.current = controls
 
     // Hover highlight
-    const hlGeo = new THREE.PlaneGeometry(GRID - 0.1, GRID - 0.1)
+    const hlGeo = new THREE.PlaneGeometry(GRID - 0.05, GRID - 0.05)
     hlGeo.rotateX(-Math.PI / 2)
     const hl = new THREE.Mesh(hlGeo, new THREE.MeshBasicMaterial({
-      color: 0xffe000, opacity: 0.5, transparent: true, depthWrite: false, depthTest: false,
+      color: 0x008CBF, opacity: 0.3, transparent: true, depthWrite: false, depthTest: false,
     }))
     hl.visible = false; hl.renderOrder = 2
     scene.add(hl)
     highlightRef.current = hl
+
+    // Selected (fixed) highlight
+    const selGeo = new THREE.PlaneGeometry(GRID - 0.05, GRID - 0.05)
+    selGeo.rotateX(-Math.PI / 2)
+    const sel = new THREE.Mesh(selGeo, new THREE.MeshBasicMaterial({
+      color: 0x008CBF, opacity: 1, transparent: false, depthWrite: false, depthTest: false,
+    }))
+    sel.visible = false; sel.renderOrder = 3
+    scene.add(sel)
+    selectedHighlightRef.current = sel
 
     // Tick
     const tick = () => {
@@ -279,6 +290,13 @@ export default function MapDefault() {
       controlsRef.current!.update()
     }
 
+    // [6] Update highlight colors for theme
+    const hlColor = themeKey === 'blue' ? 0xFBD600 : 0x008CBF
+    const hlMat = highlightRef.current?.material as THREE.MeshBasicMaterial | undefined
+    const selMat = selectedHighlightRef.current?.material as THREE.MeshBasicMaterial | undefined
+    if (hlMat) hlMat.color.set(hlColor)
+    if (selMat) selMat.color.set(hlColor)
+
     setMapLoaded(true)
   }, [])
 
@@ -400,9 +418,10 @@ export default function MapDefault() {
     if (gridMode) {
       const sx = snapGrid(hit.point.x), sz = snapGrid(hit.point.z)
       setSelectedCell({ x: sx, z: sz })
-      const hl = highlightRef.current!
-      hl.position.set(sx, hit.point.y + 0.05, sz)
-      hl.visible = true
+      if (selectedHighlightRef.current) {
+        selectedHighlightRef.current.position.set(sx, hit.point.y + 0.05, sz)
+        selectedHighlightRef.current.visible = true
+      }
     }
   }, [gridMode, getHit])
 
@@ -786,7 +805,7 @@ export default function MapDefault() {
       {/* ── Right-side controls (Figma: glass pill + location) ── */}
       {/* ── Right-side controls ── */}
       <div style={{
-        position: 'absolute', top: 64, right: 20,
+        position: 'absolute', top: 40, right: 20,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
       }}>
         {/* Glass pill */}
@@ -800,7 +819,7 @@ export default function MapDefault() {
           WebkitBackdropFilter: 'blur(9.6px)',
         }}>
           <button
-            onClick={() => { if (gridMode) { setGridMode(false); setSelectedCell(null); if (highlightRef.current) highlightRef.current.visible = false } }}
+            onClick={() => { if (gridMode) { setGridMode(false); setSelectedCell(null); if (highlightRef.current) highlightRef.current.visible = false; if (selectedHighlightRef.current) selectedHighlightRef.current.visible = false } }}
             style={{
               width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
               background: !gridMode ? '#F0EAD6' : 'transparent',
@@ -812,7 +831,7 @@ export default function MapDefault() {
             <Image src={!gridMode ? '/icons/map_selected.svg' : '/icons/map_unselected.svg'} alt="지도" width={24} height={24} style={{ objectFit: 'contain' }} />
           </button>
           <button
-            onClick={() => { setGridMode(g => !g); setSelectedCell(null); if (highlightRef.current) highlightRef.current.visible = false }}
+            onClick={() => { setGridMode(g => !g); setSelectedCell(null); if (highlightRef.current) highlightRef.current.visible = false; if (selectedHighlightRef.current) selectedHighlightRef.current.visible = false }}
             style={{
               width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
               background: gridMode ? '#F0EAD6' : 'transparent',
@@ -842,7 +861,7 @@ export default function MapDefault() {
       </div>
 
       {/* Map theme toggles */}
-      <div style={{ position: 'absolute', bottom: 96, right: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ position: 'absolute', bottom: 104, right: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
         {(Object.keys(MAP_THEMES) as ThemeKey[]).map(key => (
           <button
             key={key}

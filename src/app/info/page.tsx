@@ -1,51 +1,110 @@
+import Image from 'next/image'
+
+const BLOCKS = [
+  {
+    title: '목5동은\n어떤 곳일까?',
+    body: '목5동은 과거 안양천을 따라 논과 밭이 펼쳐져 있던 한적한 뚝방 동네였습니다. 1980년대, 최초의 대규모 계획 주택 단지로 개발되면서 급격한 변화를 맞이해 지금의 동네가 되었습니다.',
+  },
+  {
+    title: '숨겨진 놀이터',
+    body: '거대한 아파트 장벽과 빽빽한 학원가 속에는 우리가 미처 보지 못한 또 다른 목5동이 있습니다. 단지 구석구석 숨어있는 크고 작은 놀이터들입니다. 치열한 학원 스케줄 틈새, 가방을 던져둔 채 잠깐의 자유를 만끽하는 아이들의 웃음소리가 머무는 곳이며, 굳건한 아파트 숲을 사람 사는 동네로 숨 쉬게 하는 \'활기의 보물창고\'입니다.',
+  },
+  {
+    title: '모여! 오동은...',
+    body: '목5동은 오랫동안 \'학군지\'라는 단 하나의 이미지로 소비되어 왔습니다. 하지만 이 동네를 실제로 살아온 사람들은 압니다. 아파트 병풍 사이 어딘가, 학원 스케줄 틈새 어딘가에 늘 아이들이 모여 있었다는 것을.\n\n이 브랜드는 그 틈새를 다시 발견하는 일에서 출발합니다. 학업 열망과 골목 활기가 공존하는 이 동네를 \'놀기 좋은 곳\'으로 재명명하고, 주민 스스로가 자신의 공간에 애착과 자부심을 갖도록 돕는 것입니다.',
+  },
+]
+
+const YELLOW = '#FBD600'
+
+const divider = {
+  width: '100%',
+  height: 1,
+  background: YELLOW,
+  opacity: 0.5,
+  marginBottom: 10,
+} as const
+
 export default function MockdongInfo() {
-  const sections = [
-    {
-      title: '목5동은 어떤 곳일까?',
-      body: '목동 5동은 서울 양천구에 위치한 주거 지역으로, 안양천을 따라 형성된 아름다운 자연환경과 조화를 이루고 있어요. 용왕산이 품은 동네에는 오래된 골목과 새로운 이야기들이 공존합니다.',
-    },
-    {
-      title: '숨겨진 놀이터',
-      body: '목5동 곳곳에는 아이들과 어른들이 함께 즐길 수 있는 숨겨진 공간들이 있습니다. 파리공원의 분수대, 할미꽃이 피는 오솔길, 안양천변의 산책로… 모두 우리의 소중한 놀이터입니다.',
-    },
-    {
-      title: '모여! 오동은...',
-      body: '모여! 오동은 목5동 주민들이 함께 동네를 탐험하고 기억을 나누는 프로젝트입니다. 사진 한 장으로 동네의 색깔을 추출하고, 나만의 놀이터 구조물을 지도 위에 쌓아가세요.',
-    },
-  ]
-
   return (
-    <div style={{ minHeight: '100dvh', background: '#008CBF', paddingBottom: 100 }}>
-      {/* Status bar area */}
-      <div style={{ height: 48 }} />
-
+    <div style={{
+      width: '100%',
+      minWidth: 393,
+      minHeight: '100dvh',
+      background: '#008CBF',
+      fontFamily: 'Pretendard, -apple-system, sans-serif',
+    }}>
       {/* Header */}
-      <div style={{ padding: '24px 24px 0', textAlign: 'center' }}>
-        <h1 style={{
-          fontFamily: 'Pretendard, sans-serif',
-          fontSize: 28, fontWeight: 800, color: '#fff',
-          letterSpacing: '-0.5px', marginBottom: 6,
-        }}>모여! 오동</h1>
+      <div style={{
+        paddingTop: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 24,
+        paddingBottom: 56,
+      }}>
+        <Image
+          src="/icons/Logo.svg"
+          alt="모여! 오동"
+          width={211}
+          height={66}
+          style={{ objectFit: 'contain' }}
+        />
         <p style={{
-          fontFamily: 'Pretendard, sans-serif',
-          fontSize: 15, color: '#FFE000', fontWeight: 600,
-        }}>목5동 주민 참여 지도 프로젝트</p>
+          color: YELLOW,
+          fontSize: 18,
+          fontWeight: 700,
+          textAlign: 'center',
+          lineHeight: 1.5,
+          letterSpacing: -0.018,
+          whiteSpace: 'pre-line',
+          margin: 0,
+        }}>
+          {'깊은 열망은 잔잔하게,\n아이들의 활기는 선명하게!'}
+        </p>
       </div>
 
-      {/* Sections */}
-      <div style={{ padding: '32px 24px 0', display: 'flex', flexDirection: 'column', gap: 32 }}>
-        {sections.map((s, i) => (
-          <div key={i}>
-            <h2 style={{
-              fontFamily: 'Pretendard, sans-serif',
-              fontSize: 18, fontWeight: 700, color: '#FFE000',
-              marginBottom: 10,
-            }}>{s.title}</h2>
-            <p style={{
-              fontFamily: 'Pretendard, sans-serif',
-              fontSize: 14, color: 'rgba(255,255,255,0.85)',
-              lineHeight: 1.7,
-            }}>{s.body}</p>
+      {/* Content blocks */}
+      <div style={{
+        paddingLeft: 20,
+        paddingRight: 20,
+        paddingBottom: 120,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 56,
+      }}>
+        {BLOCKS.map((block, i) => (
+          <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            {/* Left header */}
+            <div style={{ flex: '0 0 26%', minWidth: 0 }}>
+              <div style={divider} />
+              <p style={{
+                color: YELLOW,
+                fontSize: 14,
+                fontWeight: 700,
+                lineHeight: 1.5,
+                letterSpacing: -0.014,
+                whiteSpace: 'pre-line',
+                margin: 0,
+              }}>
+                {block.title}
+              </p>
+            </div>
+            {/* Right body */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={divider} />
+              <p style={{
+                color: YELLOW,
+                fontSize: 14,
+                fontWeight: 500,
+                lineHeight: 1.65,
+                letterSpacing: -0.014,
+                whiteSpace: 'pre-line',
+                margin: 0,
+              }}>
+                {block.body}
+              </p>
+            </div>
           </div>
         ))}
       </div>

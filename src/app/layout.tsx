@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import TabBar from '@/components/TabBar'
 
-export const metadata: Metadata = { title: '목동 놀이터' }
+export const metadata: Metadata = {
+  title: '목동 놀이터',
+}
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -16,13 +18,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body>
         <div style={{
+          position: 'relative',
           width: '100%',
           minWidth: 393,
           minHeight: '100dvh',
-          position: 'relative',
+          margin: '0 auto',
+          background: '#8F976F',
           overflow: 'hidden',
         }}>
-          <main style={{ minHeight: '100dvh' }}>
+          <main style={{ paddingBottom: 64 }}>
             {children}
           </main>
           <TabBar />
