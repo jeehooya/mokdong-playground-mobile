@@ -51,6 +51,19 @@ export function snapToPalette(hex: string): string {
   return closest
 }
 
+const SIMILAR_GROUPS: string[][] = [
+  ['#4A4140', '#4d4135'],  // CHOCO와 ESPRESSO
+]
+
+function addWithSimilar(used: Set<string>, color: string) {
+  used.add(color)
+  for (const group of SIMILAR_GROUPS) {
+    if (group.includes(color)) {
+      group.forEach(c => used.add(c))
+    }
+  }
+}
+
 export function snapToPaletteUnique(hexes: string[]): string[] {
   const used = new Set<string>()
   return hexes.map(hex => {
@@ -64,7 +77,7 @@ export function snapToPaletteUnique(hexes: string[]): string[] {
       if (d < minDist) { minDist = d; closest = p }
     }
     if (!closest) closest = snapToPalette(hex)
-    used.add(closest)
+    addWithSimilar(used, closest)
     return closest
   })
 }

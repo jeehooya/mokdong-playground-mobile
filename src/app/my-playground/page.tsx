@@ -93,8 +93,8 @@ export default function MyPlayground() {
                 boxShadow: '0px 1px 3px rgba(0,0,0,0.1)',
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'space-between',
-                paddingTop: 20, paddingBottom: 20,
-                paddingLeft: 16, paddingRight: 16,
+                paddingTop: 20, paddingBottom: 28,
+                paddingLeft: 20, paddingRight: 20,
               }}>
                 <Image src={svgFile} alt={name} width={96} height={96}
                   style={{ objectFit: 'contain' }} onError={() => {}} />
@@ -107,7 +107,7 @@ export default function MyPlayground() {
                   }}>{name}</p>
                   <p style={{
                     fontFamily: 'Pretendard, sans-serif',
-                    fontSize: 10, fontWeight: 500,
+                    fontSize: 12, fontWeight: 500,
                     color: 'rgba(0,0,0,0.4)',
                     lineHeight: 1.4, letterSpacing: -0.01,
                     margin: 0,

@@ -30,7 +30,7 @@ export const PIPE_NAMES: Record<string, string> = {
 export const PIPE_DESCRIPTIONS: Record<string, string> = {
   'Cylinder.001.glb': '산 아래 한강의 물줄기가 마치 용왕의 꼬리같다!',
   'Cylinder.002.glb': '목동 골목의 아치형 터널을 지나며',
-  'Cylinder.006.glb': '안양천 따라 구불구불 이어지는 길',
+  'Cylinder.006.glb': '안양천 따라 구불구불 이어지는 길목을 걸어보자',
   'Cylinder.007.glb': '곧게 뻗은 터널 너머 빛이 보여',
   'Cylinder.008.glb': '작은 마을 월촌리의 아늑한 골목',
   'Cylinder.009.glb': '꽃피울 날이 머지 않은 모든 아이들을 위하여!',
