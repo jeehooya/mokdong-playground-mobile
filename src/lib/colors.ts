@@ -1,3 +1,74 @@
+export const PALETTE_NAMES: Record<string, string> = {
+  '#E8E4E1': 'CREAM',    '#0090C0': 'AQUA',      '#CC3820': 'ROUGE',
+  '#E8C800': 'DANDELION','#4A4140': 'CHOCO',     '#d4ef02': 'LIME',
+  '#0a205c': 'NAVY',     '#eb5791': 'ROSE',       '#e9afaf': 'BLUSH',
+  '#cfd9a8': 'SAGE',     '#054899': 'COBALT',     '#ce1719': 'CRIMSON',
+  '#4d4135': 'ESPRESSO', '#7ab17a': 'FERN',       '#354fae': 'INDIGO',
+  '#ec602b': 'TANGERINE','#e7d6b9': 'LINEN',      '#4dab4a': 'CLOVER',
+  '#8fb9c9': 'MIST',     '#fd8143': 'PEACH',      '#f9f7d0': 'BUTTER',
+  '#2d6a53': 'FOREST',   '#bbd7ec': 'SKY',        '#ffcc00': 'MARIGOLD',
+  '#fffaf0': 'IVORY',
+}
+
+export const PALETTE = [
+  '#E8E4E1', '#0090C0', '#CC3820', '#E8C800', '#4A4140',
+  '#d4ef02', '#0a205c', '#eb5791', '#e9afaf', '#cfd9a8',
+  '#054899', '#ce1719', '#4d4135', '#7ab17a', '#354fae',
+  '#ec602b', '#e7d6b9', '#4dab4a', '#8fb9c9', '#fd8143',
+  '#f9f7d0', '#2d6a53', '#bbd7ec', '#ffcc00', '#fffaf0',
+]
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ]
+}
+
+function colorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
+  const rMean = (r1 + r2) / 2
+  const dr = r1 - r2
+  const dg = g1 - g2
+  const db = b1 - b2
+  return Math.sqrt(
+    (2 + rMean / 256) * dr * dr +
+    4 * dg * dg +
+    (2 + (255 - rMean) / 256) * db * db
+  )
+}
+
+export function snapToPalette(hex: string): string {
+  const [r, g, b] = hexToRgb(hex)
+  let minDist = Infinity
+  let closest = PALETTE[0]
+  for (const p of PALETTE) {
+    const [pr, pg, pb] = hexToRgb(p)
+    const d = colorDistance(r, g, b, pr, pg, pb)
+    if (d < minDist) { minDist = d; closest = p }
+  }
+  return closest
+}
+
+export function snapToPaletteUnique(hexes: string[]): string[] {
+  const used = new Set<string>()
+  return hexes.map(hex => {
+    const [r, g, b] = hexToRgb(hex)
+    let minDist = Infinity
+    let closest = ''
+    for (const p of PALETTE) {
+      if (used.has(p)) continue
+      const [pr, pg, pb] = hexToRgb(p)
+      const d = colorDistance(r, g, b, pr, pg, pb)
+      if (d < minDist) { minDist = d; closest = p }
+    }
+    if (!closest) closest = snapToPalette(hex)
+    used.add(closest)
+    return closest
+  })
+}
+
 export function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255; g /= 255; b /= 255
   const max = Math.max(r, g, b), min = Math.min(r, g, b)

@@ -3,19 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { extractSlotColors, SlotColors } from '@/lib/colors'
-
-const SLOTS = [
-  { key: 'milk' as const,        label: 'ORANGE' },
-  { key: 'skyblue' as const,     label: 'GREEN' },
-  { key: 'brown' as const,       label: 'IVORY' },
-  { key: 'insideGreen' as const, label: 'BROWN' },
-]
+import { extractSlotColors, snapToPaletteUnique, PALETTE_NAMES } from '@/lib/colors'
 
 export default function ExtractColor() {
   const router = useRouter()
   const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [colors, setColors] = useState<SlotColors | null>(null)
+  const [colors, setColors] = useState<string[] | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -31,7 +24,9 @@ export default function ExtractColor() {
       const ctx = canvas.getContext('2d')!
       ctx.drawImage(img, 0, 0)
       const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      setColors(extractSlotColors(data))
+      const raw = extractSlotColors(data)
+      const slotHexes = [raw.milk, raw.skyblue, raw.brown, raw.insideGreen]
+      setColors(snapToPaletteUnique(slotHexes))
     }
     img.src = src
   }, [router])
@@ -106,17 +101,17 @@ export default function ExtractColor() {
         marginTop: 32, flexShrink: 0,
         display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center',
       }}>
-        {SLOTS.map(({ key, label }) => (
-          <div key={key} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+        {[0, 1, 2, 3].map(i => (
+          <div key={i} style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
             <div style={{
               width: 22, height: 22, borderRadius: '50%',
-              background: colors ? colors[key] : '#ddd',
+              background: colors ? colors[i] : '#ddd',
               flexShrink: 0,
             }} />
             <span style={{
               fontSize: 12, fontWeight: 500, color: '#000',
               fontFamily: 'Pretendard, sans-serif',
-            }}>{label}</span>
+            }}>{colors ? (PALETTE_NAMES[colors[i]] ?? 'COLOR') : '...'}</span>
           </div>
         ))}
       </div>

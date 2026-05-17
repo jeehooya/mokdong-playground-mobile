@@ -7,7 +7,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { MAP_THEMES, ThemeKey, PIPE_MODELS, PIPE_NAMES } from '@/lib/pipes'
-import { slotColorsToArray } from '@/lib/colors'
+import { snapToPaletteUnique } from '@/lib/colors'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -677,7 +677,7 @@ export default function MapDefault() {
       console.warn('[spawnPipe] no colors provided — skipping', modelFile)
       return
     }
-    const validColors = colors.filter(c => c && c.length > 1)
+    const validColors = snapToPaletteUnique(colors.filter(c => c && c.length > 1))
     if (validColors.length === 0) {
       console.warn('[spawnPipe] all colors invalid — skipping', modelFile)
       return
@@ -916,9 +916,9 @@ export default function MapDefault() {
         centerX: x, centerY: y + 1.5, centerZ: z,
         radius: baseRadius,
         theta, phi,
-        thetaSpeed: (0.3 + Math.random() * 0.5) * (Math.random() > 0.5 ? 1 : -1),
-        phiSpeed: (0.2 + Math.random() * 0.4) * (Math.random() > 0.5 ? 1 : -1),
-        radiusSpeed: 0.4 + Math.random() * 0.6,
+        thetaSpeed: (0.08 + Math.random() * 0.06) * (Math.random() > 0.5 ? 1 : -1),
+        phiSpeed: (0.05 + Math.random() * 0.04) * (Math.random() > 0.5 ? 1 : -1),
+        radiusSpeed: 0.1 + Math.random() * 0.08,
         radiusAmplitude: baseRadius * 0.3,
         baseRadius,
         phase: Math.random() * Math.PI * 2,

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { PIPE_MODELS } from '@/lib/pipes'
-import { SlotColors, slotColorsToArray } from '@/lib/colors'
+import { snapToPaletteUnique } from '@/lib/colors'
 
 interface Bubble { x: number; y: number; vx: number; vy: number }
 
@@ -28,8 +28,12 @@ export default function AddPlayground() {
     const cell = cellRaw
       ? JSON.parse(cellRaw)
       : { x: Math.round((Math.random() - 0.5) * 20), z: Math.round((Math.random() - 0.5) * 20) }
-    const colors: SlotColors = colorsRaw ? JSON.parse(colorsRaw) : null
-    const colorArr = colors ? slotColorsToArray(colors) : Array(6).fill('#cccccc')
+    // slotColors = [milk, skyblue, brown, insideGreen] (4-element snapped array)
+    const snappedHexes: string[] = colorsRaw ? JSON.parse(colorsRaw) : null
+    const base = snappedHexes?.length === 4
+      ? [snappedHexes[0], snappedHexes[2], snappedHexes[1], snappedHexes[2], snappedHexes[0], snappedHexes[3]]
+      : Array(6).fill('#cccccc')
+    const colorArr = snapToPaletteUnique(base)
 
     const modelFile = PIPE_MODELS[Math.floor(Math.random() * PIPE_MODELS.length)]
 
