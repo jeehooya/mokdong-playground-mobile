@@ -52,7 +52,16 @@ export function snapToPalette(hex: string): string {
 }
 
 const SIMILAR_GROUPS: string[][] = [
-  ['#4A4140', '#4d4135'],  // CHOCO와 ESPRESSO
+  ['#4A4140', '#4d4135'],
+  ['#E8E4E1', '#fffaf0', '#e7d6b9', '#f9f7d0'],
+  ['#0090C0', '#054899', '#354fae', '#0a205c'],
+  ['#8fb9c9', '#bbd7ec'],
+  ['#4dab4a', '#7ab17a', '#2d6a53'],
+  ['#d4ef02', '#cfd9a8'],
+  ['#CC3820', '#ce1719'],
+  ['#ec602b', '#fd8143'],
+  ['#eb5791', '#e9afaf'],
+  ['#E8C800', '#ffcc00'],
 ]
 
 function addWithSimilar(used: Set<string>, color: string) {
