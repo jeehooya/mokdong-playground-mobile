@@ -1110,11 +1110,11 @@ export default function MapDefault() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         style={{
-          position: 'absolute', bottom: 100,
+          position: 'absolute', bottom: 132,
           left: '50%',
           transform: cameraVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(120px)',
           transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
-          width: 64, height: 64, borderRadius: '50%', border: 'none',
+          width: 60, height: 60, borderRadius: '50%', border: 'none',
           background: '#FFD900', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: '0px 4px 2px rgba(0,0,0,0.1)', flexShrink: 0,
