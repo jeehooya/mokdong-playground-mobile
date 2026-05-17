@@ -640,7 +640,9 @@ export default function MapDefault() {
       if (placedRef.current.has(cellKey(p.x, p.z))) return
       const isNew = !!newPos && p.x === newPos.x && p.z === newPos.z
       const scale = p.scale ?? BASE_SCALE
-      spawnPipe(p.x, p.z, 0, scale, p.colors, p.modelFile, p.photos ?? [], isNew)
+      const cols = (p.colors ?? []).slice(0, 4)
+      while (cols.length < 4) cols.push(cols[0] ?? '#E8E4E1')
+      spawnPipe(p.x, p.z, 0, scale, cols, p.modelFile, p.photos ?? [], isNew)
         .then(() => {
           if (!isNew) spawnFloatingBubbles(p.x, p.z, surfaceYRef.current, scale, cellKey(p.x, p.z))
 
@@ -672,13 +674,19 @@ export default function MapDefault() {
     const scene = sceneRef.current
     if (!scene) { console.error('[spawnPipe] scene not ready'); return }
 
-    // [1] Validate colors
+    // [1] Normalize to exactly 4 colors then snap
     if (!colors || colors.length === 0) {
       console.warn('[spawnPipe] no colors provided — skipping', modelFile)
       return
     }
-    const validColors = snapToPaletteUnique(colors.filter(c => c && c.length > 1))
-    if (validColors.length === 0) {
+    const normalizedColors = [
+      colors[0] ?? '#E8E4E1',
+      colors[1] ?? colors[0] ?? '#4A4140',
+      colors[2] ?? colors[0] ?? '#0090C0',
+      colors[3] ?? colors[1] ?? '#E8C800',
+    ]
+    const snappedColors = snapToPaletteUnique(normalizedColors)
+    if (snappedColors.length === 0) {
       console.warn('[spawnPipe] all colors invalid — skipping', modelFile)
       return
     }
@@ -707,33 +715,18 @@ export default function MapDefault() {
       return
     }
 
-    // Material name → color index (same as desktop NAME_TO_IDX)
-    const NAME_TO_IDX: Record<string, number> = {
-      Milk: 0, Brown: 1, Skyblue: 2,
-      'Material.015': 3, 'Material.014': 4, inside_green: 5,
-    }
-
-    // Apply colors: name match first → traversal index → original mat color → fallback
-    let meshIdx = 0
+    // Apply colors: cycle through 4 snapped colors
+    let matIdx = 0
     model.traverse(child => {
       if (!(child instanceof THREE.Mesh)) return
-      const applyMat = (mat: THREE.Material): THREE.MeshBasicMaterial => {
-        const nameIdx = NAME_TO_IDX[mat.name]
-        let hex: string | undefined =
-          nameIdx !== undefined ? validColors[nameIdx] : undefined
-        if (!hex) hex = validColors[meshIdx]
-        if (!hex) {
-          const c = (mat as THREE.MeshStandardMaterial).color
-          if (c) hex = `#${c.getHexString()}`
-        }
-        return makePipeMat(hex ?? '#cccccc')
-      }
-      if (Array.isArray(child.material)) {
-        child.material = child.material.map(applyMat)
-      } else {
-        child.material = applyMat(child.material)
-      }
-      meshIdx++
+      const isArray = Array.isArray(child.material)
+      const mats = isArray ? child.material as THREE.Material[] : [child.material as THREE.Material]
+      const newMats = mats.map(() => {
+        const hex = snappedColors[matIdx % 4] ?? snappedColors[0] ?? '#cccccc'
+        matIdx++
+        return makePipeMat(hex)
+      })
+      child.material = isArray ? newMats : newMats[0]
     })
 
     // Center model on its bounding box (matches desktop)
