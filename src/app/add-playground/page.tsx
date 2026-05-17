@@ -12,8 +12,12 @@ export default function AddPlayground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [pipeName, setPipeName] = useState('')
   const [ready, setReady] = useState(false)
+  const initializedRef = useRef(false)   // prevent React strict-mode double-run
 
   useEffect(() => {
+    if (initializedRef.current) return
+    initializedRef.current = true
+
     // Read session data
     const cellRaw = sessionStorage.getItem('selectedCell')
     const colorsRaw = sessionStorage.getItem('slotColors')

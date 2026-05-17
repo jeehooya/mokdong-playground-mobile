@@ -9,13 +9,29 @@ export default function Camera() {
   const albumInputRef = useRef<HTMLInputElement>(null)
 
   function handleFile(file: File) {
-    const reader = new FileReader()
-    reader.onload = e => {
-      const dataUrl = e.target?.result as string
-      sessionStorage.setItem('capturedImage', dataUrl)
-      router.push('/extract')
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+    img.onload = () => {
+      // Resize to max 1024px and compress to JPEG 0.75 to fit sessionStorage limit
+      const MAX = 1024
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      URL.revokeObjectURL(objectUrl)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75)
+      try {
+        sessionStorage.setItem('capturedImage', dataUrl)
+        router.push('/extract')
+      } catch {
+        // If still too large, try lower quality
+        const smaller = canvas.toDataURL('image/jpeg', 0.5)
+        sessionStorage.setItem('capturedImage', smaller)
+        router.push('/extract')
+      }
     }
-    reader.readAsDataURL(file)
+    img.src = objectUrl
   }
 
   return (

@@ -129,6 +129,10 @@ export default function MapDefault() {
     controls.minPolarAngle = 0
     controls.minDistance = 8
     controls.maxDistance = 300
+    controls.touches = {
+      ONE: THREE.TOUCH.PAN,
+      TWO: THREE.TOUCH.DOLLY_ROTATE,
+    }
     controlsRef.current = controls
 
     // Hover highlight
@@ -298,6 +302,7 @@ export default function MapDefault() {
     const cone = new THREE.Mesh(geo, mat)
     cone.position.set(x, y, z)
     cone.rotation.x = Math.PI
+    cone.visible = false
     scene.add(cone)
     markerRef.current = cone
   }
@@ -317,7 +322,7 @@ export default function MapDefault() {
     const box = new THREE.Box3().setFromObject(mapFieldRef.current)
     const minX = Math.floor(box.min.x), maxX = Math.ceil(box.max.x)
     const minZ = Math.floor(box.min.z), maxZ = Math.ceil(box.max.z)
-    const y = box.max.y + 0.05
+    const y = (surfaceYRef.current > 0 ? surfaceYRef.current : box.max.y) + 0.02
 
     const pts: number[] = []
     for (let x = minX; x <= maxX; x++) {
@@ -423,7 +428,8 @@ export default function MapDefault() {
     const camera = cameraRef.current!
 
     if (locationActive) {
-      // Deselect: restore previous camera state
+      // Deselect: hide marker + restore previous camera state
+      if (markerRef.current) markerRef.current.visible = false
       if (prevCameraRef.current) {
         controls.target.copy(prevCameraRef.current.target)
         camera.position.copy(prevCameraRef.current.pos)
@@ -439,6 +445,7 @@ export default function MapDefault() {
         target: controls.target.clone(),
       }
       const { x, y, z } = markerPosRef.current
+      if (markerRef.current) markerRef.current.visible = true
       controls.target.set(x, y - 0.5, z)
       camera.position.set(x + 20, y + 16, z + 20)
       controls.update()
@@ -556,42 +563,108 @@ export default function MapDefault() {
     placedRef.current.set(cellKey(x, z), entry)
 
     if (animate) {
-      // ease-out back
-      const startMs = performance.now()
-      const dur = 500
-      const anim = () => {
-        const t = Math.min(1, (performance.now() - startMs) / dur)
-        const c1 = 1.70158, c3 = c1 + 1
-        const e = 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2)
-        wrapper.scale.setScalar(scale * e)
-        if (t < 1) requestAnimationFrame(anim)
-      }
-      requestAnimationFrame(anim)
+      // ── Phase 1: ease-out-back spawn (500ms) ──
+      await new Promise<void>(resolve => {
+        const startMs = performance.now()
+        const dur = 500
+        const anim = () => {
+          const t = Math.min(1, (performance.now() - startMs) / dur)
+          const c1 = 1.70158, c3 = c1 + 1
+          const e = 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2)
+          wrapper.scale.setScalar(scale * e)
+          if (t < 1) requestAnimationFrame(anim)
+          else resolve()
+        }
+        requestAnimationFrame(anim)
+      })
 
-      // Bubble effect
+      // Bubble effect on spawn
       spawnBubbles(x, y, z)
 
-      // Camera focus animation (ease-out cubic, 900ms)
-      // 45° azimuth, 12° elevation — same as desktop
+      // ── Merge check ──
+      let nearEntry: PlacedEntry | null = null
+      let nearKey = ''
+      let nearDist = Infinity
+      for (const [k, e] of placedRef.current) {
+        if (k === cellKey(x, z)) continue
+        const d = Math.hypot(e.x - x, e.z - z)
+        if (d > 0 && d <= MERGE_RADIUS * 2 && d < nearDist) {
+          nearEntry = e; nearKey = k; nearDist = d
+        }
+      }
+
+      if (nearEntry) {
+        // ── Phase 2: fly to midpoint + scale to 0 (500ms) ──
+        const mx = Math.round((x + nearEntry.x) / 2)
+        const mz = Math.round((z + nearEntry.z) / 2)
+        const my = (y + nearEntry.y) / 2
+        const midVec = new THREE.Vector3(mx, my, mz)
+        const fromPosA = wrapper.position.clone()
+        const fromPosB = nearEntry.obj.position.clone()
+        const fromScaleA = scale, fromScaleB = nearEntry.scale
+
+        await new Promise<void>(resolve => {
+          const startMs = performance.now()
+          const dur = 500
+          const anim = () => {
+            const t = Math.min(1, (performance.now() - startMs) / dur)
+            const e = t * t * t  // ease-in cubic
+            wrapper.position.lerpVectors(fromPosA, midVec, e)
+            wrapper.scale.setScalar(fromScaleA * (1 - e))
+            nearEntry!.obj.position.lerpVectors(fromPosB, midVec, e)
+            nearEntry!.obj.scale.setScalar(fromScaleB * (1 - e))
+            if (t < 1) requestAnimationFrame(anim)
+            else resolve()
+          }
+          requestAnimationFrame(anim)
+        })
+
+        // Remove both objects
+        scene.remove(wrapper)
+        scene.remove(nearEntry.obj)
+        placedRef.current.delete(cellKey(x, z))
+        placedRef.current.delete(nearKey)
+
+        // Merge photos and update localStorage
+        const mergedPhotos = [...photos, ...nearEntry.photos]
+        const mergedScale = Math.max(scale, nearEntry.scale) * MERGE_SCALE
+        const allPipes = JSON.parse(localStorage.getItem('pipes') ?? '[]')
+        const filtered = allPipes.filter((p: PlacedEntry) =>
+          !(p.x === x && p.z === z) && !(p.x === nearEntry!.x && p.z === nearEntry!.z)
+        )
+
+        // ── Phase 3: spawn merged object at midpoint (500ms) ──
+        const mergedModelFile = PIPE_MODELS[Math.floor(Math.random() * PIPE_MODELS.length)]
+        await spawnPipe(mx, mz, my, mergedScale, colors, mergedModelFile, mergedPhotos, true)
+
+        // Save merged to localStorage
+        const mergedEntry = placedRef.current.get(cellKey(mx, mz))
+        if (mergedEntry) {
+          filtered.push({
+            x: mx, z: mz, y: my, scale: mergedScale,
+            modelFile: mergedModelFile, colors, photos: mergedPhotos,
+          })
+          localStorage.setItem('pipes', JSON.stringify(filtered))
+        }
+        return
+      }
+
+      // ── No merge: camera focus + toast ──
       const DIST = 30
       const elev = 12 * Math.PI / 180
       const azim = 45 * Math.PI / 180
-      const targetPos = new THREE.Vector3(x, y, z)
-      const newCamPos = new THREE.Vector3(
-        x + DIST * Math.cos(elev) * Math.cos(azim),
-        y + DIST * Math.sin(elev),
-        z + DIST * Math.cos(elev) * Math.sin(azim),
-      )
       camAnimRef.current = {
         fromTarget: controlsRef.current!.target.clone(),
-        toTarget:   targetPos,
+        toTarget:   new THREE.Vector3(x, y, z),
         fromPos:    cameraRef.current!.position.clone(),
-        toPos:      newCamPos,
+        toPos:      new THREE.Vector3(
+          x + DIST * Math.cos(elev) * Math.cos(azim),
+          y + DIST * Math.sin(elev),
+          z + DIST * Math.cos(elev) * Math.sin(azim),
+        ),
         startMs:    performance.now(),
         durationMs: 900,
       }
-
-      // Name toast
       const name = PIPE_NAMES[modelFile] ?? modelFile
       const id = Date.now()
       setNameToast({ text: name, id })
@@ -701,11 +774,11 @@ export default function MapDefault() {
             background: 'rgba(237,237,237,0.1)',
             backdropFilter: 'blur(9.6px)', WebkitBackdropFilter: 'blur(9.6px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', flexShrink: 0,
+            cursor: 'pointer', flexShrink: 0, padding: 4,
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={locationActive ? '/icons/location_selected.svg?v=2' : '/icons/location_unselected.svg?v=2'} alt="내 위치" width={20} height={20} style={{ objectFit: 'contain' }} />
+          <img src={locationActive ? '/icons/location_selected.svg?v=3' : '/icons/location_unselected.svg?v=3'} alt="내 위치" width={48} height={48} style={{ objectFit: 'contain' }} />
         </button>
       </div>
 
