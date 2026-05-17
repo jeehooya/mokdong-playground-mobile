@@ -239,41 +239,30 @@ export default function MapDefault() {
     // Set camera target to map center
     const center = box.getCenter(new THREE.Vector3())
 
-    // ── Marker placement (persisted via localStorage) ──
-    if (!markerPosRef.current) {
-      const saved = localStorage.getItem('myLocation')
-      if (saved) {
-        // [1] Restore saved location
-        const { x, z, y } = JSON.parse(saved) as { x: number; z: number; y: number }
-        markerPosRef.current = { x, z, y }
-        placeMarker(x, y, z)
-      } else if (mapFieldRef.current) {
-        // [1] Generate random location on Map_Field surface and persist
-        const mbox = new THREE.Box3().setFromObject(mapFieldRef.current)
-        const rc = new THREE.Raycaster()
-        let placed = false
-        for (let attempt = 0; attempt < 30; attempt++) {
-          const rx = mbox.min.x + Math.random() * (mbox.max.x - mbox.min.x)
-          const rz = mbox.min.z + Math.random() * (mbox.max.z - mbox.min.z)
-          rc.set(new THREE.Vector3(rx, mbox.max.y + 10, rz), new THREE.Vector3(0, -1, 0))
-          const hits = rc.intersectObject(mapFieldRef.current, true)
-          if (hits.length > 0) {
-            const { x, y, z } = hits[0].point
-            markerPosRef.current = { x, z, y: y + 0.5 }
-            placeMarker(x, y + 0.5, z)
-            localStorage.setItem('myLocation', JSON.stringify({ x, z, y: y + 0.5 }))
-            placed = true
-            break
-          }
+    // ── Marker placement — always random on each load ──
+    if (mapFieldRef.current) {
+      const mbox = new THREE.Box3().setFromObject(mapFieldRef.current)
+      const rc = new THREE.Raycaster()
+      let placed = false
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const rx = mbox.min.x + Math.random() * (mbox.max.x - mbox.min.x)
+        const rz = mbox.min.z + Math.random() * (mbox.max.z - mbox.min.z)
+        rc.set(new THREE.Vector3(rx, mbox.max.y + 10, rz), new THREE.Vector3(0, -1, 0))
+        const hits = rc.intersectObject(mapFieldRef.current, true)
+        if (hits.length > 0) {
+          const { x, y, z } = hits[0].point
+          markerPosRef.current = { x, z, y: y + 0.5 }
+          placeMarker(x, y + 0.5, z)
+          placed = true
+          break
         }
-        if (!placed) {
-          const cx = (mbox.min.x + mbox.max.x) / 2
-          const cz = (mbox.min.z + mbox.max.z) / 2
-          const cy = mbox.max.y + 0.5
-          markerPosRef.current = { x: cx, z: cz, y: cy }
-          placeMarker(cx, cy, cz)
-          localStorage.setItem('myLocation', JSON.stringify({ x: cx, z: cz, y: cy }))
-        }
+      }
+      if (!placed) {
+        const cx = (mbox.min.x + mbox.max.x) / 2
+        const cz = (mbox.min.z + mbox.max.z) / 2
+        const cy = mbox.max.y + 0.5
+        markerPosRef.current = { x: cx, z: cz, y: cy }
+        placeMarker(cx, cy, cz)
       }
     }
 
@@ -742,6 +731,30 @@ export default function MapDefault() {
 
   // (sessionStorage new-pipe is now handled inside the combined effect above)
 
+  // [3] Move marker every 1 minute
+  useEffect(() => {
+    if (!mapLoaded) return
+    const interval = setInterval(() => {
+      if (!markerPosRef.current || !mapFieldRef.current) return
+      const directions = [
+        { dx: 2, dz: 0 }, { dx: -2, dz: 0 },
+        { dx: 0, dz: 2 }, { dx: 0, dz: -2 },
+        { dx: 2, dz: 2 }, { dx: -2, dz: 2 },
+        { dx: 2, dz: -2 }, { dx: -2, dz: -2 },
+      ]
+      const dir = directions[Math.floor(Math.random() * directions.length)]
+      const fieldBox = new THREE.Box3().setFromObject(mapFieldRef.current!)
+      const newX = Math.max(fieldBox.min.x, Math.min(fieldBox.max.x, markerPosRef.current.x + dir.dx))
+      const newZ = Math.max(fieldBox.min.z, Math.min(fieldBox.max.z, markerPosRef.current.z + dir.dz))
+      const newY = markerPosRef.current.y
+      markerPosRef.current = { x: newX, z: newZ, y: newY }
+      if (markerRef.current) {
+        markerRef.current.position.set(newX, newY, newZ)
+      }
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [mapLoaded])
+
   // Sync body background to current theme (matches desktop behaviour)
   useEffect(() => {
     document.body.style.background = MAP_THEMES[theme].bg
@@ -816,7 +829,7 @@ export default function MapDefault() {
         <button
           onClick={focusMarker}
           style={{
-            width: 36, height: 36, borderRadius: '50%', border: '0.862px solid rgba(255,255,255,0.7)',
+            width: 48, height: 48, borderRadius: '50%', border: '0.862px solid rgba(255,255,255,0.7)',
             background: 'rgba(237,237,237,0.1)',
             backdropFilter: 'blur(9.6px)', WebkitBackdropFilter: 'blur(9.6px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -824,7 +837,7 @@ export default function MapDefault() {
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={locationActive ? '/icons/location_selected.svg?v=3' : '/icons/location_unselected.svg?v=3'} alt="내 위치" width={48} height={48} style={{ objectFit: 'contain' }} />
+          <img src={locationActive ? '/icons/location_selected.svg?v=3' : '/icons/location_unselected.svg?v=3'} alt="내 위치" width={36} height={36} style={{ objectFit: 'contain' }} />
         </button>
       </div>
 
@@ -849,7 +862,7 @@ export default function MapDefault() {
       <button
         onClick={goToCamera}
         style={{
-          position: 'absolute', bottom: 96, left: '50%', transform: 'translateX(-50%)',
+          position: 'absolute', bottom: 128, left: '50%', transform: 'translateX(-50%)',
           width: 64, height: 64, borderRadius: '50%', border: 'none',
           background: '#FFD900', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
