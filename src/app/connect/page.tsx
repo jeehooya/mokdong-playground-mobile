@@ -14,7 +14,7 @@ export default function Connect() {
       {/* 일러스트 */}
       <div style={{
         position: 'absolute', top: 126, left: '50%',
-        transform: 'translateX(-40%)',
+        transform: 'translateX(calc(-40% - 20px))',
         width: 196,
       }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
