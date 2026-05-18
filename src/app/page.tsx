@@ -344,7 +344,7 @@ export default function MapDefault() {
       }
     }
 
-    // [2] First load: focus camera on my location
+    // [2] First load: focus camera on   location
     if (isFirstLoadRef.current && markerPosRef.current) {
       const { x, y, z } = markerPosRef.current
       controlsRef.current!.target.set(x, y - 0.5, z)
@@ -679,13 +679,10 @@ export default function MapDefault() {
       console.warn('[spawnPipe] no colors provided — skipping', modelFile)
       return
     }
-    const normalizedColors = [
-      colors[0] ?? '#E8E4E1',
-      colors[1] ?? colors[0] ?? '#4A4140',
-      colors[2] ?? colors[0] ?? '#0090C0',
-      colors[3] ?? colors[1] ?? '#E8C800',
-    ]
-    const snappedColors = snapToPaletteUnique(normalizedColors)
+    const snappedColors = snapToPaletteUnique(
+      ([colors[0], colors[1], colors[2], colors[3] ?? colors[0]].filter(Boolean)) as string[]
+    )
+    while (snappedColors.length < 4) snappedColors.push(snappedColors[0])
     if (snappedColors.length === 0) {
       console.warn('[spawnPipe] all colors invalid — skipping', modelFile)
       return
@@ -715,18 +712,29 @@ export default function MapDefault() {
       return
     }
 
-    // Apply colors: cycle through 4 snapped colors
-    let matIdx = 0
+    // Apply colors: name-based slot mapping with meshIdx fallback
+    const NAME_TO_IDX: Record<string, number> = {
+      Milk: 0, Brown: 1, Skyblue: 2,
+      'Material.015': 1, 'Material.014': 0, inside_green: 3,
+    }
+
+    let meshIdx = 0
     model.traverse(child => {
       if (!(child instanceof THREE.Mesh)) return
-      const isArray = Array.isArray(child.material)
-      const mats = isArray ? child.material as THREE.Material[] : [child.material as THREE.Material]
-      const newMats = mats.map(() => {
-        const hex = snappedColors[matIdx % 4] ?? snappedColors[0] ?? '#cccccc'
-        matIdx++
+
+      const applyColor = (mat: THREE.Material): THREE.MeshBasicMaterial => {
+        const nameIdx = NAME_TO_IDX[mat.name]
+        const slotIdx = nameIdx !== undefined ? nameIdx : meshIdx % 4
+        const hex = snappedColors[slotIdx] ?? snappedColors[0] ?? '#cccccc'
         return makePipeMat(hex)
-      })
-      child.material = isArray ? newMats : newMats[0]
+      }
+
+      if (Array.isArray(child.material)) {
+        child.material = child.material.map(applyColor)
+      } else {
+        child.material = applyColor(child.material)
+      }
+      meshIdx++
     })
 
     // Center model on its bounding box (matches desktop)

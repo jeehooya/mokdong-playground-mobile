@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 const V = '?v=3'
 
@@ -42,16 +42,7 @@ const HIDDEN_PATHS = ['/camera', '/extract', '/add-playground']
 
 export default function TabBar() {
   const pathname = usePathname()
-  const router = useRouter()
   if (HIDDEN_PATHS.includes(pathname)) return null
-
-  function handleReset() {
-    localStorage.removeItem('pipes')
-    localStorage.removeItem('discovered')
-    sessionStorage.clear()
-    router.push('/info')
-    setTimeout(() => router.replace('/'), 50)
-  }
 
   return (
     <div style={{
@@ -91,16 +82,12 @@ export default function TabBar() {
         })}
 
         {/* 연결하기 */}
-        <button onClick={handleReset} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', gap: 0, width: 50,
-          background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0,
-        }}>
+        <Link href="/connect" style={tabStyle}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={'/icons/navigator/연결하기_no.svg' + V} alt="연결하기"
             width={50} height={50} style={{ objectFit: 'contain', flexShrink: 0 }} />
-          <span style={labelStyle(false, INACTIVE_COLOR)}>연결하기</span>
-        </button>
+          <span style={labelStyle(pathname === '/connect', '#008CBF')}>연결하기</span>
+        </Link>
       </nav>
     </div>
   )
