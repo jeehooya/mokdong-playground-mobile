@@ -40,7 +40,7 @@ export default function ExtractColor() {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      overflowY: 'auto', overflowX: 'hidden',
+      overflow: 'hidden',
       background: '#F0EAD6',
       display: 'flex',
       flexDirection: 'column',
@@ -49,10 +49,9 @@ export default function ExtractColor() {
 
       {/* 헤더 */}
       <div style={{
-        height: 104,
+        height: 104, flexShrink: 0,
         display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
         paddingBottom: 16, paddingLeft: 20, paddingRight: 20,
-        flexShrink: 0,
       }}>
         <div style={{ width: 28 }} />
         <span style={{
@@ -74,11 +73,13 @@ export default function ExtractColor() {
         </button>
       </div>
 
-      {/* 사진 표시 */}
-      <div style={{ marginTop: 32, paddingLeft: 20, paddingRight: 20, overflow: 'hidden', flexShrink: 0 }}>
+      {/* 사진 영역 */}
+      <div style={{
+        flex: 1, minHeight: 0,
+        paddingLeft: 20, paddingRight: 20,
+      }}>
         <div style={{
-          width: '100%',
-          aspectRatio: '325 / 329',
+          width: '100%', height: '100%',
           borderRadius: 9,
           overflow: 'hidden',
           border: '2px solid #000',
@@ -90,7 +91,7 @@ export default function ExtractColor() {
             <img
               src={imageUrl}
               alt="선택한 사진"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 9, display: 'block' }}
             />
           )}
         </div>
@@ -98,7 +99,8 @@ export default function ExtractColor() {
 
       {/* 추출 색상 */}
       <div style={{
-        marginTop: 32, flexShrink: 0,
+        flexShrink: 0,
+        paddingTop: 16, paddingBottom: 16,
         display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center',
       }}>
         {[0, 1, 2, 3].map(i => (
@@ -116,8 +118,8 @@ export default function ExtractColor() {
         ))}
       </div>
 
-      {/* 확인 버튼 (SVG) */}
-      <div style={{ marginTop: 40, flexShrink: 0, display: 'flex', justifyContent: 'center', paddingBottom: 40 }}>
+      {/* 확인 버튼 */}
+      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center', paddingBottom: 40 }}>
         <button
           onClick={handleConfirm}
           style={{ background: 'none', border: 'none', cursor: colors ? 'pointer' : 'not-allowed', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: colors ? 1 : 0.4 }}
