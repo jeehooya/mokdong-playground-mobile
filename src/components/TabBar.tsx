@@ -38,7 +38,7 @@ function labelStyle(active: boolean, color: string): React.CSSProperties {
   }
 }
 
-const HIDDEN_PATHS = ['/camera', '/extract', '/add-playground']
+const HIDDEN_PATHS = ['/camera', '/extract', '/add-playground', '/splash']
 
 export default function TabBar() {
   const pathname = usePathname()

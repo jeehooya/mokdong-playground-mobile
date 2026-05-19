@@ -120,6 +120,18 @@ export default function MapDefault() {
   const [themeOpen, setThemeOpen] = useState(false)
   const themeContainerRef = useRef<HTMLDivElement>(null)
 
+  // ── Splash redirect ──
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const shown = sessionStorage.getItem('splashShown')
+      if (!shown) {
+        sessionStorage.setItem('splashShown', 'true')
+        router.replace('/splash')
+        return
+      }
+    }
+  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Scene init ──
   useEffect(() => {
     const canvas = canvasRef.current!
